@@ -31,40 +31,7 @@ export const SettingsScreen: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isChangingPass, setIsChangingPass] = useState(false);
 
-  const handleLogout = () => {
-    Alert.alert('Đăng xuất', 'Bạn có chắc chắn muốn đăng xuất khỏi TravelLako?', [
-      { text: 'Hủy', style: 'cancel' },
-      {
-        text: 'Đăng xuất',
-        style: 'destructive',
-        onPress: () => logout(),
-      },
-    ]);
-  };
-
-  const handleChangePassword = async () => {
-    if (!newPassword || newPassword.length < 6) {
-      Alert.alert('Lỗi', 'Mật khẩu mới phải có ít nhất 6 ký tự.');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      Alert.alert('Lỗi', 'Mật khẩu xác nhận không khớp.');
-      return;
-    }
-
-    try {
-      setIsChangingPass(true);
-      await authService.updateProfile({ password: newPassword });
-      Alert.alert('Thành công', 'Đổi mật khẩu thành công!');
-      setShowPasswordModal(false);
-      setNewPassword('');
-      setConfirmPassword('');
-    } catch (err: any) {
-      Alert.alert('Lỗi đổi mật khẩu', err?.message || 'Không thể đổi mật khẩu lúc này.');
-    } finally {
-      setIsChangingPass(false);
-    }
-  };
+  const handleLogout = async () => { await logout(); };
 
   return (
     <View style={[styles.root, { paddingTop: Math.max(insets.top, 12), paddingBottom: Math.max(insets.bottom, 16) }]}>
@@ -435,4 +402,5 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });
+
 

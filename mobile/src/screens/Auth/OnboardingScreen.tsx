@@ -11,7 +11,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '@components/common';
 import { colors, spacing, radius } from '@theme';
-import { IMAGES } from '@assets';
+import { IMAGES } from '../../assets';
 import { SCREEN_NAMES } from '@constants/screenNames';
 import { useAppNavigation } from '@hooks/useAppNavigation';
 

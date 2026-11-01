@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   ScrollView,
   StatusBar,
-  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText, AppBadge } from '@components/common';
@@ -20,15 +19,8 @@ export const ProfileScreen: React.FC = () => {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
 
-  const handleLogout = () => {
-    Alert.alert('Đăng xuất', 'Bạn có chắc chắn muốn đăng xuất khỏi tài khoản?', [
-      { text: 'Hủy', style: 'cancel' },
-      {
-        text: 'Đăng xuất',
-        style: 'destructive',
-        onPress: () => logout(),
-      },
-    ]);
+  const handleLogout = async () => {
+    await logout();
   };
 
   return (
