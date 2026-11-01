@@ -5,13 +5,13 @@ import type { TextStyle, ViewStyle } from 'react-native';
 // 1. MÀU SẮC (Colors Palette)
 // ----------------------------------------------------------------------------
 export const colors = {
-  // Brand & Primary (Ocean Azure - Biển trời dịu mắt)
+  // Brand & Primary (TravelSafe Modern Royal Blue)
   primary: {
-    main: '#0369A1',       // Sky-700: Màu thương hiệu chính, nút CTA, active state
-    dark: '#075985',       // Sky-800: Trạng thái hover / pressed
-    light: '#0284C7',      // Sky-600: Nhấn nhẹ
-    soft: '#F0F9FF',       // Sky-50: Nền thẻ active, highlight
-    border: '#BAE6FD',     // Sky-200: Viền thẻ active
+    main: '#2563EB',       // Blue-600: Màu thương hiệu chính, nút CTA, active state
+    dark: '#1D4ED8',       // Blue-700: Trạng thái hover / pressed
+    light: '#3B82F6',      // Blue-500: Nhấn nhẹ
+    soft: '#EFF6FF',       // Blue-50: Nền thẻ active, highlight
+    border: '#BFDBFE',     // Blue-200: Viền thẻ active
   },
 
   // Nature & Safety (Coastal Teal - Thiên nhiên / An toàn)

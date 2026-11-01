@@ -22,3 +22,12 @@ export interface ApiError {
   errors?: Record<string, string[]>;
 }
 
+/**
+ * Shared Geographic & Destination Primitives
+ */
+export interface Coordinates {
+  lat: number;
+  lng: number;
+}
+
+export type PlaceType = 'attraction' | 'hotel' | 'restaurant' | 'cafe';

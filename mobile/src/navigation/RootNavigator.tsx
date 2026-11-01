@@ -4,7 +4,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from './types';
 import { SCREEN_NAMES } from '@constants/screenNames';
 import { AuthNavigator } from './AuthNavigator';
-import { MainTabNavigator } from './MainTabNavigator';
+import { ProfileScreen } from '@screens/Profile/ProfileScreen';
+import { EditProfileScreen } from '@screens/Profile/EditProfileScreen';
+import { SettingsScreen } from '@screens/Profile/SettingsScreen';
 import { useAuthStore } from '@store/useAuthStore';
 import { colors } from '@theme';
 
@@ -31,14 +33,24 @@ export const RootNavigator: React.FC = () => {
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
-        animation: 'fade',
+        animation: 'slide_from_right',
       }}
     >
       {isAuthenticated ? (
-        <Stack.Screen
-          name={SCREEN_NAMES.ROOT_MAIN as 'RootMain'}
-          component={MainTabNavigator}
-        />
+        <>
+          <Stack.Screen
+            name={SCREEN_NAMES.PROFILE as 'ProfileScreen'}
+            component={ProfileScreen}
+          />
+          <Stack.Screen
+            name={SCREEN_NAMES.EDIT_PROFILE as 'EditProfileScreen'}
+            component={EditProfileScreen}
+          />
+          <Stack.Screen
+            name={SCREEN_NAMES.SETTINGS as 'SettingsScreen'}
+            component={SettingsScreen}
+          />
+        </>
       ) : (
         <Stack.Screen
           name={SCREEN_NAMES.ROOT_AUTH as 'RootAuth'}
@@ -57,4 +69,3 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 });
-
