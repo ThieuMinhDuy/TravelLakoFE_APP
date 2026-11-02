@@ -2,16 +2,16 @@ import { Platform } from 'react-native';
 import type { TextStyle, ViewStyle } from 'react-native';
 
 // ----------------------------------------------------------------------------
-// 1. MÀU SẮC (Colors Palette)
+// 1. MÀU SẮC (Colors Palette - Modern Natural Travel)
 // ----------------------------------------------------------------------------
 export const colors = {
-  // Brand & Primary (TravelSafe Modern Royal Blue)
+  // Brand & Primary (Ocean Azure - Biển trời dịu mắt)
   primary: {
-    main: '#2563EB',       // Blue-600: Màu thương hiệu chính, nút CTA, active state
-    dark: '#1D4ED8',       // Blue-700: Trạng thái hover / pressed
-    light: '#3B82F6',      // Blue-500: Nhấn nhẹ
-    soft: '#EFF6FF',       // Blue-50: Nền thẻ active, highlight
-    border: '#BFDBFE',     // Blue-200: Viền thẻ active
+    main: '#0369A1',       // Sky-700: Màu thương hiệu chính, nút CTA, active state
+    dark: '#075985',       // Sky-800: Trạng thái hover / pressed
+    light: '#0284C7',      // Sky-600: Nhấn nhẹ
+    soft: '#F0F9FF',       // Sky-50: Nền thẻ active, highlight
+    border: '#BAE6FD',     // Sky-200: Viền thẻ active
   },
 
   // Nature & Safety (Coastal Teal - Thiên nhiên / An toàn)
@@ -21,9 +21,9 @@ export const colors = {
     dark: '#0F766E',       // Teal-700
   },
 
-  // Warmth & Accent (Sunset Sand - Cát biển) - Dùng hạn chế: Rating sao, Favorite heart
+  // Warmth & Accent (Sunset Sand - Cát biển) - Dùng hạn chế: Rating sao, Highlight chữ
   sand: {
-    main: '#D97706',       // Amber-600: Rating sao, nút Favorite
+    main: '#D97706',       // Amber-600: Rating sao, chữ "Destinations !"
     light: '#FEF3C7',      // Amber-100: Nền badge rating
     dark: '#B45309',       // Amber-700
   },
@@ -43,6 +43,7 @@ export const colors = {
     muted: '#94A3B8',      // Slate-400: Placeholder, disabled text
     inverse: '#FFFFFF',    // Trắng trên nền đậm
     primary: '#0369A1',    // Xanh link hoặc text nhấn
+    sand: '#D97706',       // Vàng cam cát biển
   },
 
   // Structural & Borders
@@ -50,6 +51,7 @@ export const colors = {
     subtle: '#E2E8F0',     // Viền 1px nhã nhặn cho card, divider
     focused: '#0369A1',    // Viền khi input focus
     error: '#EF4444',      // Viền khi input lỗi
+    active: '#0369A1',     // Viền xanh chủ đạo (như thanh search)
   },
 
   // Semantic & Feedback Status
@@ -68,23 +70,80 @@ export const colors = {
   overlay: {
     backdrop: 'rgba(15, 23, 42, 0.45)', // Backdrop mờ cho Modal
     light: 'rgba(255, 255, 255, 0.85)',
+    cardGlass: 'rgba(15, 23, 42, 0.52)',
   },
 } as const;
 
 export type ColorTokens = typeof colors;
 
 // ----------------------------------------------------------------------------
-// 2. PHÔNG CHỮ & ĐỊNH DẠNG (Typography Hierarchy)
+// 2. PHÔNG CHỮ & ĐỊNH DẠNG (Typography Hierarchy - SF Pro, Outfit & Inter)
 // ----------------------------------------------------------------------------
+export const fontFamilies = {
+  // 1. Apple San Francisco Pro (Chính xác theo thiết kế Figma của màn hình)
+  sfProDisplay: {
+    regular: 'SFProDisplay-Regular',
+    medium: 'SFProDisplay-Medium',
+    semiBold: 'SFProDisplay-Semibold',
+    bold: 'SFProDisplay-Bold',
+  },
+  sfProText: {
+    regular: 'SFProText-Regular',
+    medium: 'SFProText-Medium',
+    semiBold: 'SFProText-Semibold',
+    bold: 'SFProText-Bold',
+  },
+
+  // 2. Outfit (Design System Headings)
+  outfit: {
+    regular: 'Outfit-Regular',
+    medium: 'Outfit-Medium',
+    semiBold: 'Outfit-SemiBold',
+    bold: 'Outfit-Bold',
+  },
+
+  // 3. Inter (Design System Body Text)
+  inter: {
+    regular: 'Inter-Regular',
+    medium: 'Inter-Medium',
+    semiBold: 'Inter-SemiBold',
+    bold: 'Inter-Bold',
+  },
+
+  // Semantic defaults mapping (Chuẩn thiết kế SF Pro)
+  heading: {
+    regular: 'SFProDisplay-Regular',
+    medium: 'SFProDisplay-Medium',
+    semiBold: 'SFProDisplay-Semibold',
+    bold: 'SFProDisplay-Bold',
+  },
+  body: {
+    regular: 'SFProText-Regular',
+    medium: 'SFProText-Medium',
+    semiBold: 'SFProText-Semibold',
+    bold: 'SFProText-Bold',
+  },
+};
+
 export const typography = {
-  h1: {
-    fontSize: 26,
+  heroTitle: {
+    fontFamily: fontFamilies.heading.bold,
+    fontSize: 28,
     fontWeight: '700',
-    lineHeight: 32,
-    letterSpacing: -0.5,
+    lineHeight: 34,
+    letterSpacing: -0.4,
+  } as TextStyle,
+
+  h1: {
+    fontFamily: fontFamilies.heading.bold,
+    fontSize: 24,
+    fontWeight: '700',
+    lineHeight: 30,
+    letterSpacing: -0.4,
   } as TextStyle,
 
   h2: {
+    fontFamily: fontFamilies.heading.bold,
     fontSize: 20,
     fontWeight: '700',
     lineHeight: 26,
@@ -92,58 +151,82 @@ export const typography = {
   } as TextStyle,
 
   h3: {
-    fontSize: 17,
+    fontFamily: fontFamilies.heading.semiBold,
+    fontSize: 18,
     fontWeight: '600',
-    lineHeight: 22,
+    lineHeight: 24,
     letterSpacing: -0.2,
   } as TextStyle,
 
   subtitle: {
-    fontSize: 15,
+    fontFamily: fontFamilies.heading.medium,
+    fontSize: 16,
     fontWeight: '500',
-    lineHeight: 20,
+    lineHeight: 22,
+  } as TextStyle,
+
+  price: {
+    fontFamily: fontFamilies.heading.bold,
+    fontSize: 22,
+    fontWeight: '700',
+    lineHeight: 28,
+    letterSpacing: -0.3,
   } as TextStyle,
 
   body: {
-    fontSize: 15,
+    fontFamily: fontFamilies.body.regular,
+    fontSize: 14,
     fontWeight: '400',
-    lineHeight: 22,
+    lineHeight: 21,
   } as TextStyle,
 
   bodyMedium: {
-    fontSize: 15,
+    fontFamily: fontFamilies.body.medium,
+    fontSize: 14,
     fontWeight: '500',
-    lineHeight: 22,
+    lineHeight: 21,
   } as TextStyle,
 
   bodyBold: {
-    fontSize: 15,
+    fontFamily: fontFamilies.body.semiBold,
+    fontSize: 14,
     fontWeight: '600',
-    lineHeight: 22,
+    lineHeight: 21,
   } as TextStyle,
 
   caption: {
-    fontSize: 13,
+    fontFamily: fontFamilies.body.regular,
+    fontSize: 12,
     fontWeight: '400',
-    lineHeight: 18,
+    lineHeight: 16,
   } as TextStyle,
 
   captionMedium: {
-    fontSize: 13,
+    fontFamily: fontFamilies.body.medium,
+    fontSize: 12,
     fontWeight: '500',
-    lineHeight: 18,
+    lineHeight: 16,
+  } as TextStyle,
+
+  captionBold: {
+    fontFamily: fontFamilies.body.semiBold,
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 16,
   } as TextStyle,
 
   tiny: {
-    fontSize: 11,
+    fontFamily: fontFamilies.body.medium,
+    fontSize: 10,
     fontWeight: '500',
     lineHeight: 14,
   } as TextStyle,
 
   button: {
-    fontSize: 15,
+    fontFamily: fontFamilies.heading.semiBold,
+    fontSize: 16,
     fontWeight: '600',
-    lineHeight: 20,
+    lineHeight: 22,
   } as TextStyle,
 } as const;
 
@@ -176,6 +259,8 @@ export const radius = {
   lg: 12,
   xl: 16,
   round: 24,
+  pill: 30,
+  card: 26,
   full: 9999,
 } as const;
 
@@ -220,12 +305,12 @@ export const shadows = {
   card: Platform.select<ViewStyle>({
     ios: {
       shadowColor: '#0F172A',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.04,
-      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.06,
+      shadowRadius: 12,
     },
     android: {
-      elevation: 2,
+      elevation: 3,
     },
     default: {},
   }) as ViewStyle,
@@ -238,6 +323,7 @@ export type ShadowToken = keyof typeof shadows;
 // ----------------------------------------------------------------------------
 export const theme = {
   colors,
+  fontFamilies,
   typography,
   spacing,
   radius,
