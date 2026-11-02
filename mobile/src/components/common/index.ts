@@ -7,4 +7,4 @@ export * from './AppHeader';
 export * from './ScreenWrapper';
 export * from './LoadingOverlay';
 export * from './EmptyState';
-
+export * from './AppIcon';

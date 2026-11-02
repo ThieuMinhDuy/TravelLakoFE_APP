@@ -33,6 +33,10 @@ export const SettingsScreen: React.FC = () => {
 
   const handleLogout = async () => { await logout(); };
 
+  const handleChangePassword = async () => {
+    setShowPasswordModal(false);
+  };
+
   return (
     <View style={[styles.root, { paddingTop: Math.max(insets.top, 12), paddingBottom: Math.max(insets.bottom, 16) }]}>
       <StatusBar barStyle="dark-content" />
