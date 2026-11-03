@@ -6,6 +6,14 @@
 export const SCREEN_NAMES = {
   // Root Navigators
   ROOT_AUTH: 'RootAuth',
+  MAIN_TAB: 'MainTabNavigator',
+
+  // Bottom Tabs
+  HOME_TAB: 'HomeTab',
+  DIARY_TAB: 'DiaryTab',
+  AI_CHAT_TAB: 'AIChatTab',
+  SCHEDULE_TAB: 'ScheduleTab',
+  PROFILE_TAB: 'ProfileTab',
 
   // Auth Flow
   ONBOARDING: 'OnboardingScreen',

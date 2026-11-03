@@ -1,4 +1,6 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
+import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 /**
  * Authentication Stack Param List
@@ -13,11 +15,30 @@ export type AuthStackParamList = {
 };
 
 /**
- * Root Stack Param List (Phân hệ Auth, Hồ sơ & Cài đặt)
+ * Main Bottom Tab Param List
+ * 5 tabs: Home, Diary, AI Chat, Schedule, Profile
+ */
+export type MainTabParamList = {
+  HomeTab: undefined;
+  DiaryTab: undefined;
+  AIChatTab: undefined;
+  ScheduleTab: undefined;
+  ProfileTab: undefined;
+};
+
+/**
+ * Root Stack Param List (Phân hệ Auth, Main Tabs, Hồ sơ & Cài đặt)
  */
 export type RootStackParamList = {
   RootAuth: NavigatorScreenParams<AuthStackParamList>;
+  MainTabNavigator: NavigatorScreenParams<MainTabParamList> | undefined;
   ProfileScreen: undefined;
   EditProfileScreen: undefined;
   SettingsScreen: undefined;
 };
+
+export type MainTabScreenProps<T extends keyof MainTabParamList> =
+  BottomTabScreenProps<MainTabParamList, T>;
+
+export type RootStackScreenProps<T extends keyof RootStackParamList> =
+  NativeStackScreenProps<RootStackParamList, T>;

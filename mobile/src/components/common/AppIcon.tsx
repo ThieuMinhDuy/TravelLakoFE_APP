@@ -4,26 +4,32 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import {
   faHouse,
+  faBookOpen,
   faEnvelope,
   faCalendarDays,
   faHeart,
   faCircleUser,
 } from '@fortawesome/free-solid-svg-icons';
+import { faClaude } from '@fortawesome/free-brands-svg-icons';
 import { colors } from '@theme';
 
 // ----------------------------------------------------------------------------
-// 5 Icon chính cho Navbar Footer (Home, Chat, Schedule, Saved, Profile)
+// Danh mục icon chính cho Navbar Footer & Common UI
 // ----------------------------------------------------------------------------
 export type AppIconName =
   | 'home'
+  | 'diary'
   | 'chat'
+  | 'claude'
   | 'schedule'
   | 'saved'
   | 'profile';
 
 const NAVBAR_ICONS: Record<AppIconName, IconDefinition> = {
   home: faHouse,
+  diary: faBookOpen,
   chat: faEnvelope,
+  claude: faClaude,
   schedule: faCalendarDays,
   saved: faHeart,
   profile: faCircleUser,
@@ -71,10 +77,10 @@ const styles = StyleSheet.create({
   badgeDot: {
     position: 'absolute',
     top: -2,
-    right: -3,
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
+    right: -4,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: '#EF4444',
     borderWidth: 1.5,
     borderColor: '#FFFFFF',

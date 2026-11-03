@@ -4,7 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from './types';
 import { SCREEN_NAMES } from '@constants/screenNames';
 import { AuthNavigator } from './AuthNavigator';
-import { ProfileScreen } from '@screens/Profile/ProfileScreen';
+import { MainTabNavigator } from './MainTabNavigator';
 import { EditProfileScreen } from '@screens/Profile/EditProfileScreen';
 import { SettingsScreen } from '@screens/Profile/SettingsScreen';
 import { useAuthStore } from '@store/useAuthStore';
@@ -39,8 +39,8 @@ export const RootNavigator: React.FC = () => {
       {isAuthenticated ? (
         <>
           <Stack.Screen
-            name={SCREEN_NAMES.PROFILE as 'ProfileScreen'}
-            component={ProfileScreen}
+            name={SCREEN_NAMES.MAIN_TAB as 'MainTabNavigator'}
+            component={MainTabNavigator}
           />
           <Stack.Screen
             name={SCREEN_NAMES.EDIT_PROFILE as 'EditProfileScreen'}
