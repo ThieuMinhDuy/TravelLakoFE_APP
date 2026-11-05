@@ -14,6 +14,8 @@ export interface Place {
   pricePerNight?: number;
   stars?: number;
   category?: string;
+  cuisineType?: string;
+  price?: number;
   itemType?: 'Attraction' | 'Hotel' | 'Restaurant' | 'Cafe';
   isFavorite?: boolean;
 }

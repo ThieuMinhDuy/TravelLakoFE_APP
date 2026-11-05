@@ -66,7 +66,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({ onNotificationPress }) =
         </View>
         <View style={styles.textWrapper}>
           <AppText style={styles.greetingText}>
-            Hi, {userName}
+            Xin chào, {userName}
           </AppText>
         </View>
       </View>

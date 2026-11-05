@@ -13,27 +13,27 @@ export interface CategoryItem {
 export const CATEGORIES: CategoryItem[] = [
   {
     id: 'beach',
-    name: 'Beach',
+    name: 'Biển đảo',
     image: IMAGES.categoryBeach,
   },
   {
     id: 'mountain',
-    name: 'Mountain',
+    name: 'Núi non',
     image: IMAGES.categoryMountain,
   },
   {
     id: 'hotel',
-    name: 'Hotel',
+    name: 'Khách sạn',
     image: { uri: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=200&auto=format&fit=crop&q=80' },
   },
   {
     id: 'food',
-    name: 'Dining',
+    name: 'Ẩm thực',
     image: { uri: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=200&auto=format&fit=crop&q=80' },
   },
   {
     id: 'cafe',
-    name: 'Cafe',
+    name: 'Quán Cafe',
     image: { uri: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=200&auto=format&fit=crop&q=80' },
   },
 ];
@@ -75,9 +75,9 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
     <View style={styles.container}>
       {/* Header Row */}
       <View style={styles.headerRow}>
-        <AppText style={styles.sectionTitle}>Choose Category</AppText>
+        <AppText style={styles.sectionTitle}>Danh mục khám phá</AppText>
         <TouchableOpacity activeOpacity={0.7} onPress={onSeeAllPress}>
-          <AppText style={styles.seeAllText}>See all</AppText>
+          <AppText style={styles.seeAllText}>Xem tất cả</AppText>
         </TouchableOpacity>
       </View>
 

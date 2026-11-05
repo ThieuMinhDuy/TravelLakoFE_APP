@@ -16,7 +16,7 @@ export const HomeSearchBar: React.FC<HomeSearchBarProps> = ({
   onChangeText,
   onSubmitEditing,
   onFilterPress,
-  placeholder = 'Search',
+  placeholder = 'Tìm kiếm điểm đến, thành phố...',
 }) => {
   return (
     <View style={styles.container}>

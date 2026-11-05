@@ -24,6 +24,8 @@ import {
   faCompass,
   faXmark,
   faArrowUpRightFromSquare,
+  faLightbulb,
+  faClock,
 } from '@fortawesome/free-solid-svg-icons';
 import {
   faBookmark as faBookmarkRegular,
@@ -62,7 +64,9 @@ export type AppIconName =
   | 'cafe'
   | 'compass'
   | 'export'
-  | 'close';
+  | 'close'
+  | 'lightbulb'
+  | 'clock';
 
 const APP_ICONS: Record<AppIconName, IconDefinition> = {
   home: faHouse,
@@ -91,6 +95,8 @@ const APP_ICONS: Record<AppIconName, IconDefinition> = {
   compass: faCompass,
   export: faArrowUpRightFromSquare,
   close: faXmark,
+  lightbulb: faLightbulb,
+  clock: faClock,
 };
 
 const colorMap: Record<string, string> = {

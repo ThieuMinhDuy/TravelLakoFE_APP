@@ -6,8 +6,8 @@ import { fontFamilies } from '@theme';
 export const HomeHero: React.FC = () => {
   return (
     <View style={styles.container}>
-      <AppText style={styles.titleRegular}>Explore Amazing</AppText>
-      <AppText style={styles.titleAccent}>Destinations !</AppText>
+      <AppText style={styles.titleRegular}>Khám phá những</AppText>
+      <AppText style={styles.titleAccent}>Điểm đến tuyệt vời !</AppText>
     </View>
   );
 };

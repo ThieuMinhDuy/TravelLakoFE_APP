@@ -7,6 +7,13 @@ export interface SearchPlacesParams {
   city?: string;
 }
 
+export interface CategorizedPlaces {
+  attractions: Place[];
+  hotels: Place[];
+  restaurants: Place[];
+  cafes: Place[];
+}
+
 export const placeService = {
   /**
    * Lấy danh sách địa điểm theo loại (attraction, hotel, restaurant, cafe) từ API GET /api/places/:type
@@ -18,7 +25,7 @@ export const placeService = {
       if (Array.isArray(data?.places)) {
         return data.places.map((p: any) => ({
           ...p,
-          itemType: p.itemType || (type === 'attraction' ? 'Attraction' : type === 'hotel' ? 'Hotel' : 'Attraction'),
+          itemType: p.itemType || (type === 'attraction' ? 'Attraction' : type === 'hotel' ? 'Hotel' : type === 'restaurant' ? 'Restaurant' : 'Cafe'),
           city: typeof p.city === 'object' ? p.city?._id : p.city,
         }));
       }
@@ -33,6 +40,27 @@ export const placeService = {
       console.warn(`Lỗi khi gọi API getPlaces(${type}):`, error);
       return [];
     }
+  },
+
+  /**
+   * Lấy danh sách khách sạn & resort từ API GET /api/places/hotel
+   */
+  async getHotels(params?: PlaceFilterParams): Promise<Place[]> {
+    return this.getPlaces('hotel', params);
+  },
+
+  /**
+   * Lấy danh sách nhà hàng ẩm thực từ API GET /api/places/restaurant
+   */
+  async getRestaurants(params?: PlaceFilterParams): Promise<Place[]> {
+    return this.getPlaces('restaurant', params);
+  },
+
+  /**
+   * Lấy danh sách quán cafe từ API GET /api/places/cafe
+   */
+  async getCafes(params?: PlaceFilterParams): Promise<Place[]> {
+    return this.getPlaces('cafe', params);
   },
 
   /**
@@ -91,6 +119,57 @@ export const placeService = {
     } catch (error) {
       console.warn('Lỗi khi gọi API searchPlaces:', error);
       return [];
+    }
+  },
+
+  /**
+   * Tìm kiếm địa điểm toàn cục hoặc theo thành phố và trả về phân loại riêng biệt
+   * (attractions, hotels, restaurants, cafes)
+   */
+  async searchPlacesCategorized(paramsOrQuery?: string | SearchPlacesParams): Promise<CategorizedPlaces> {
+    const params: SearchPlacesParams =
+      typeof paramsOrQuery === 'string'
+        ? { q: paramsOrQuery }
+        : paramsOrQuery || {};
+
+    try {
+      const res = await apiClient.get<any>(API_URLS.PLACES.GLOBAL_SEARCH, {
+        params: {
+          q: params.q || undefined,
+          city: params.city || undefined,
+        },
+      });
+      const data = res.data;
+
+      if (data && (data.attractions || data.hotels || data.restaurants || data.cafes)) {
+        return {
+          attractions: (data.attractions || []).map((item: any) => ({
+            ...item,
+            itemType: 'Attraction' as const,
+            city: typeof item.city === 'object' ? item.city?._id : item.city,
+          })),
+          hotels: (data.hotels || []).map((item: any) => ({
+            ...item,
+            itemType: 'Hotel' as const,
+            city: typeof item.city === 'object' ? item.city?._id : item.city,
+          })),
+          restaurants: (data.restaurants || []).map((item: any) => ({
+            ...item,
+            itemType: 'Restaurant' as const,
+            city: typeof item.city === 'object' ? item.city?._id : item.city,
+          })),
+          cafes: (data.cafes || []).map((item: any) => ({
+            ...item,
+            itemType: 'Cafe' as const,
+            city: typeof item.city === 'object' ? item.city?._id : item.city,
+          })),
+        };
+      }
+
+      return { attractions: [], hotels: [], restaurants: [], cafes: [] };
+    } catch (error) {
+      console.warn('Lỗi khi gọi API searchPlacesCategorized:', error);
+      return { attractions: [], hotels: [], restaurants: [], cafes: [] };
     }
   },
 };

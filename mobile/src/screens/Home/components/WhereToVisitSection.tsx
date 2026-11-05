@@ -51,7 +51,7 @@ export const WhereToVisitSection: React.FC<WhereToVisitSectionProps> = ({
     <View style={styles.container}>
       {/* Section Header */}
       <View style={styles.headerRow}>
-        <AppText style={styles.sectionTitle}>Where would you like to visit?</AppText>
+        <AppText style={styles.sectionTitle}>Bạn muốn đi du lịch ở đâu?</AppText>
       </View>
 
       {/* Horizontal List of Cities */}

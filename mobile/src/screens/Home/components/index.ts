@@ -1,7 +1,10 @@
 export * from './HomeHeader';
 export * from './HomeHero';
 export * from './HomeSearchBar';
+export * from './WhereToVisitSection';
 export * from './PopularDestinationsSection';
 export * from './CategorySection';
-export * from './WhereToVisitSection';
-
+export * from './AITripBanner';
+export * from './FeaturedHotelsSection';
+export * from './CulinarySection';
+export * from './TravelTipsSection';

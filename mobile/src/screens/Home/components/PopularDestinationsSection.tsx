@@ -27,7 +27,7 @@ export interface PopularDestinationsSectionProps {
 
 export const PopularDestinationsSection: React.FC<PopularDestinationsSectionProps> = ({
   places,
-  title = 'Popular Destinations',
+  title = 'Điểm đến thịnh hành',
   isLoading = false,
   onPlacePress,
   onBookmarkPress,
@@ -108,7 +108,7 @@ export const PopularDestinationsSection: React.FC<PopularDestinationsSectionProp
       <View style={styles.headerRow}>
         <AppText style={styles.sectionTitle}>{title}</AppText>
         <TouchableOpacity activeOpacity={0.7} onPress={onSeeAllPress}>
-          <AppText style={styles.seeAllText}>See all</AppText>
+          <AppText style={styles.seeAllText}>Xem tất cả</AppText>
         </TouchableOpacity>
       </View>
 

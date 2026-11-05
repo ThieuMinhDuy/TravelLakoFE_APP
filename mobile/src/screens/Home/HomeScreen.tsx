@@ -13,6 +13,10 @@ import {
   WhereToVisitSection,
   PopularDestinationsSection,
   CategorySection,
+  AITripBanner,
+  FeaturedHotelsSection,
+  CulinarySection,
+  TravelTipsSection,
 } from './components';
 import { cityService, placeService, favoriteService } from '@services';
 import type { City, Place } from '@appTypes';
@@ -21,6 +25,9 @@ export const HomeScreen: React.FC = () => {
   // State quản lý dữ liệu từ các API
   const [cities, setCities] = useState<City[]>([]);
   const [places, setPlaces] = useState<Place[]>([]);
+  const [hotels, setHotels] = useState<Place[]>([]);
+  const [restaurants, setRestaurants] = useState<Place[]>([]);
+  const [cafes, setCafes] = useState<Place[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
 
   // State bộ lọc và tìm kiếm
@@ -38,24 +45,45 @@ export const HomeScreen: React.FC = () => {
     setIsPlacesLoading(true);
     try {
       if (cityId) {
-        // Gọi API GET /places/search?city={cityId} theo đúng backend
-        const results = await placeService.searchPlaces({
+        // Gọi API GET /places/search?city={cityId} phân loại trả về attractions, hotels, restaurants, cafes
+        const categorized = await placeService.searchPlacesCategorized({
           city: cityId,
           q: keyword?.trim() || undefined,
         });
-        setPlaces(results);
+
+        // Điểm tham quan nổi bật
+        setPlaces(categorized.attractions);
+        // Khách sạn theo thành phố
+        setHotels(categorized.hotels);
+        // Nhà hàng theo thành phố
+        setRestaurants(categorized.restaurants);
+        // Quán cafe theo thành phố
+        setCafes(categorized.cafes);
       } else if (keyword && keyword.trim().length > 0) {
-        const results = await placeService.searchPlaces({
+        const categorized = await placeService.searchPlacesCategorized({
           q: keyword.trim(),
         });
-        setPlaces(results);
+        setPlaces(categorized.attractions);
+        setHotels(categorized.hotels);
+        setRestaurants(categorized.restaurants);
+        setCafes(categorized.cafes);
       } else {
-        // Mặc định tải các địa điểm nổi bật chung
-        const results = await placeService.getPlaces('attraction');
-        setPlaces(results);
+        // Tải lại toàn bộ dữ liệu đầy đủ
+        const [fetchedAttractions, fetchedHotels, fetchedRestaurants, fetchedCafes] =
+          await Promise.all([
+            placeService.getPlaces('attraction'),
+            placeService.getHotels(),
+            placeService.getRestaurants(),
+            placeService.getCafes(),
+          ]);
+
+        setPlaces(fetchedAttractions);
+        setHotels(fetchedHotels);
+        setRestaurants(fetchedRestaurants);
+        setCafes(fetchedCafes);
       }
     } catch (error) {
-      console.warn('Lỗi khi tải địa điểm theo thành phố:', error);
+      console.warn('Lỗi khi tải địa điểm theo bộ lọc:', error);
     } finally {
       setIsPlacesLoading(false);
     }
@@ -64,14 +92,27 @@ export const HomeScreen: React.FC = () => {
   // Tải dữ liệu ban đầu
   const loadInitialData = useCallback(async () => {
     try {
-      const [fetchedCities, fetchedPlaces, fetchedFavorites] = await Promise.all([
+      const [
+        fetchedCities,
+        fetchedAttractions,
+        fetchedHotels,
+        fetchedRestaurants,
+        fetchedCafes,
+        fetchedFavorites,
+      ] = await Promise.all([
         cityService.getCities(),
         placeService.getPlaces('attraction'),
+        placeService.getHotels(),
+        placeService.getRestaurants(),
+        placeService.getCafes(),
         favoriteService.getFavorites(),
       ]);
 
       setCities(fetchedCities);
-      setPlaces(fetchedPlaces);
+      setPlaces(fetchedAttractions);
+      setHotels(fetchedHotels);
+      setRestaurants(fetchedRestaurants);
+      setCafes(fetchedCafes);
 
       // Lưu tập hợp ID yêu thích để check nhanh O(1)
       const favIds = new Set<string>();
@@ -156,9 +197,9 @@ export const HomeScreen: React.FC = () => {
   // Tiêu đề động của Popular Destinations
   const popularSectionTitle = useMemo(() => {
     if (activeCity) {
-      return `Popular in ${activeCity.name}`;
+      return `Nổi bật tại ${activeCity.name}`;
     }
-    return 'Popular Destinations';
+    return 'Điểm đến thịnh hành';
   }, [activeCity]);
 
   // Lọc địa điểm hiển thị theo danh mục và tìm kiếm nội bộ
@@ -271,6 +312,45 @@ export const HomeScreen: React.FC = () => {
           setSelectedCategoryId(null);
         }}
       />
+
+      {/* 7. [MỚI] AI Trip Planner Banner: Chuyển thẳng sang tab AIChatTab */}
+      <AITripBanner />
+
+      {/* 8. [MỚI] Featured Hotels & Resorts (GET /api/places/hotel) */}
+      <FeaturedHotelsSection
+        hotels={hotels}
+        title={activeCity ? `Khách sạn tại ${activeCity.name}` : 'Khách sạn & Khu nghỉ dưỡng'}
+        isLoading={isPlacesLoading}
+        favoriteIds={favoriteIds}
+        onHotelPress={(hotel) => {
+          Alert.alert(
+            hotel.name,
+            `${hotel.description}\n\nĐịa chỉ: ${hotel.address}\nGiá: ${hotel.pricePerNight?.toLocaleString('vi-VN')} đ/đêm\nXếp hạng: ${hotel.stars || 5}★`
+          );
+        }}
+        onBookmarkPress={handleBookmarkPress}
+        onSeeAllPress={handleResetFilters}
+      />
+
+      {/* 9. [MỚI] Culinary & Coffee Spots (GET /api/places/restaurant & cafe) */}
+      <CulinarySection
+        restaurants={restaurants}
+        cafes={cafes}
+        title={activeCity ? `Ẩm thực tại ${activeCity.name}` : 'Ẩm thực & Quán Cafe'}
+        isLoading={isPlacesLoading}
+        favoriteIds={favoriteIds}
+        onPlacePress={(place) => {
+          Alert.alert(
+            place.name,
+            `${place.description}\n\nĐịa chỉ: ${place.address}\nĐánh giá: ${place.rating || 4.6}★`
+          );
+        }}
+        onBookmarkPress={handleBookmarkPress}
+        onSeeAllPress={handleResetFilters}
+      />
+
+      {/* 10. [MỚI] Travel Tips & Safety (Cẩm nang du lịch hữu ích) */}
+      <TravelTipsSection />
     </ScreenWrapper>
   );
 };
