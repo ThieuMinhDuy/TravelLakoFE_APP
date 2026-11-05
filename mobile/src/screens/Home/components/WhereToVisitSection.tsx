@@ -2,7 +2,6 @@ import React from 'react';
 import { View, StyleSheet, TouchableOpacity, Image, FlatList } from 'react-native';
 import { AppText } from '@components/common';
 import { shadows, fontFamilies } from '@theme';
-import { IMAGES } from '@assets';
 import type { City } from '@appTypes';
 
 export interface WhereToVisitSectionProps {
@@ -11,15 +10,6 @@ export interface WhereToVisitSectionProps {
   onCityPress: (city: City) => void;
 }
 
-// Map ảnh local tĩnh chuẩn Figma
-const FIGMA_CITY_IMAGES: Record<string, any> = {
-  Abuja: IMAGES.cityAbuja,
-  NewYork: IMAGES.cityNewYork,
-  Sydney: IMAGES.citySydney,
-  Toronto: IMAGES.cityToronto,
-  London: IMAGES.cityLondon,
-};
-
 export const WhereToVisitSection: React.FC<WhereToVisitSectionProps> = ({
   cities,
   selectedCityId,
@@ -27,8 +17,6 @@ export const WhereToVisitSection: React.FC<WhereToVisitSectionProps> = ({
 }) => {
   const renderItem = ({ item }: { item: City }) => {
     const isSelected = selectedCityId === item._id;
-    const localImg = FIGMA_CITY_IMAGES[item.name];
-    const imageSource = localImg ? localImg : { uri: item.image };
 
     return (
       <TouchableOpacity
@@ -38,7 +26,11 @@ export const WhereToVisitSection: React.FC<WhereToVisitSectionProps> = ({
       >
         {/* City Circular Image - Chuẩn Figma radius 32 */}
         <View style={[styles.avatarWrapper, isSelected && styles.avatarWrapperActive]}>
-          <Image source={imageSource} style={styles.avatarImage} resizeMode="cover" />
+          <Image
+            source={{ uri: item.image }}
+            style={styles.avatarImage}
+            resizeMode="cover"
+          />
         </View>
 
         {/* City Name */}

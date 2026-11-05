@@ -9,7 +9,6 @@ import {
 } from 'react-native';
 import { AppText, AppIcon } from '@components/common';
 import { shadows, fontFamilies } from '@theme';
-import { IMAGES } from '@assets';
 import type { Place } from '@appTypes';
 
 const CARD_WIDTH = 230;
@@ -26,12 +25,6 @@ export interface PopularDestinationsSectionProps {
   favoriteIds?: Set<string>;
 }
 
-// Map ảnh local chuẩn Figma
-const FIGMA_DEST_IMAGES: Record<string, any> = {
-  'The Nautilus Maldives': IMAGES.destNautilus,
-  'Erin-Ijesha Falls': IMAGES.destErinIjesha,
-};
-
 export const PopularDestinationsSection: React.FC<PopularDestinationsSectionProps> = ({
   places,
   title = 'Popular Destinations',
@@ -44,12 +37,7 @@ export const PopularDestinationsSection: React.FC<PopularDestinationsSectionProp
 }) => {
   const renderItem = ({ item }: { item: Place }) => {
     const isSaved = favoriteIds.has(item._id);
-    const localImg = FIGMA_DEST_IMAGES[item.name];
-    const imageSource = localImg
-      ? localImg
-      : item.images?.[0]
-      ? { uri: item.images[0] }
-      : IMAGES.destNautilus;
+    const imageUri = item.images?.[0] || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop&q=80';
 
     return (
       <TouchableOpacity
@@ -57,8 +45,8 @@ export const PopularDestinationsSection: React.FC<PopularDestinationsSectionProp
         activeOpacity={0.9}
         onPress={() => onPlacePress(item)}
       >
-        {/* Cover Image */}
-        <Image source={imageSource} style={styles.cardImage} resizeMode="cover" />
+        {/* Cover Image from API */}
+        <Image source={{ uri: imageUri }} style={styles.cardImage} resizeMode="cover" />
 
         {/* Top-Right Action Button: Export / Share or Bookmark button */}
         <TouchableOpacity
