@@ -9,7 +9,27 @@ import {
   faCalendarDays,
   faHeart,
   faCircleUser,
+  faBell,
+  faGear,
+  faMagnifyingGlass,
+  faSliders,
+  faStar as faStarSolid,
+  faLocationDot,
+  faBookmark as faBookmarkSolid,
+  faUmbrellaBeach,
+  faMountain,
+  faHotel,
+  faUtensils,
+  faMugSaucer,
+  faCompass,
+  faXmark,
+  faArrowUpRightFromSquare,
 } from '@fortawesome/free-solid-svg-icons';
+import {
+  faBookmark as faBookmarkRegular,
+  faStar as faStarRegular,
+  faBell as faBellRegular,
+} from '@fortawesome/free-regular-svg-icons';
 import { faClaude } from '@fortawesome/free-brands-svg-icons';
 import { colors } from '@theme';
 
@@ -23,9 +43,28 @@ export type AppIconName =
   | 'claude'
   | 'schedule'
   | 'saved'
-  | 'profile';
+  | 'profile'
+  | 'bell'
+  | 'bellRegular'
+  | 'gear'
+  | 'settings'
+  | 'search'
+  | 'filter'
+  | 'star'
+  | 'starRegular'
+  | 'location'
+  | 'bookmark'
+  | 'bookmarkSolid'
+  | 'beach'
+  | 'mountain'
+  | 'hotel'
+  | 'utensils'
+  | 'cafe'
+  | 'compass'
+  | 'export'
+  | 'close';
 
-const NAVBAR_ICONS: Record<AppIconName, IconDefinition> = {
+const APP_ICONS: Record<AppIconName, IconDefinition> = {
   home: faHouse,
   diary: faBookOpen,
   chat: faEnvelope,
@@ -33,6 +72,25 @@ const NAVBAR_ICONS: Record<AppIconName, IconDefinition> = {
   schedule: faCalendarDays,
   saved: faHeart,
   profile: faCircleUser,
+  bell: faBell,
+  bellRegular: faBellRegular,
+  gear: faGear,
+  settings: faGear,
+  search: faMagnifyingGlass,
+  filter: faSliders,
+  star: faStarSolid,
+  starRegular: faStarRegular,
+  location: faLocationDot,
+  bookmark: faBookmarkRegular,
+  bookmarkSolid: faBookmarkSolid,
+  beach: faUmbrellaBeach,
+  mountain: faMountain,
+  hotel: faHotel,
+  utensils: faUtensils,
+  cafe: faMugSaucer,
+  compass: faCompass,
+  export: faArrowUpRightFromSquare,
+  close: faXmark,
 };
 
 const colorMap: Record<string, string> = {
@@ -40,6 +98,10 @@ const colorMap: Record<string, string> = {
   main: colors.text.main,
   sub: colors.text.sub,
   muted: colors.text.muted,
+  white: colors.text.inverse,
+  sand: colors.sand.main,
+  success: colors.status.success,
+  error: colors.status.error,
 };
 
 export interface AppIconProps {
@@ -47,6 +109,7 @@ export interface AppIconProps {
   size?: number;
   color?: string;
   badge?: boolean;
+  badgeCount?: number;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -55,15 +118,16 @@ export const AppIcon: React.FC<AppIconProps> = ({
   size = 22,
   color = colors.text.sub,
   badge = false,
+  badgeCount,
   style,
 }) => {
-  const icon = NAVBAR_ICONS[name] ?? faHouse;
+  const icon = APP_ICONS[name] ?? faHouse;
   const resolvedColor = colorMap[color] || color;
 
   return (
     <View style={[styles.container, style]}>
       <FontAwesomeIcon icon={icon} size={size} color={resolvedColor} />
-      {badge && <View style={styles.badgeDot} />}
+      {badge && !badgeCount && <View style={styles.badgeDot} />}
     </View>
   );
 };

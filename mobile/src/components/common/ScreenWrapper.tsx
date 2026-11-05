@@ -28,6 +28,7 @@ export interface ScreenWrapperProps {
   refreshControl?: React.ReactElement<RefreshControlProps>;
   contentContainerStyle?: ViewStyle;
   style?: ViewStyle;
+  noPadding?: boolean;
 }
 
 /**
@@ -49,6 +50,7 @@ export const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
   refreshControl,
   contentContainerStyle,
   style,
+  noPadding = false,
 }) => {
   // Main body content (Scrollable vs Fixed)
   const renderBody = () => {
@@ -58,6 +60,7 @@ export const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
           style={styles.scroll}
           contentContainerStyle={[
             styles.scrollContent,
+            noPadding && styles.noPadding,
             contentContainerStyle,
           ]}
           showsVerticalScrollIndicator={false}
@@ -70,7 +73,13 @@ export const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
     }
 
     return (
-      <View style={[styles.fixedContent, contentContainerStyle]}>
+      <View
+        style={[
+          styles.fixedContent,
+          noPadding && styles.noPadding,
+          contentContainerStyle,
+        ]}
+      >
         {children}
       </View>
     );
@@ -141,6 +150,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     flexGrow: 1,
+  },
+  noPadding: {
+    paddingHorizontal: 0,
+    paddingVertical: 0,
   },
   fixedContent: {
     flex: 1,
