@@ -26,6 +26,9 @@ export interface PlaceFilterParams {
   stars?: number;
   minPrice?: number;
   maxPrice?: number;
+  minFee?: number;
+  maxFee?: number;
+  cuisineType?: string;
   page?: number;
   limit?: number;
 }

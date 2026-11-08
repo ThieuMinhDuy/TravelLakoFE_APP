@@ -7,13 +7,13 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { ScreenWrapper, AppText, AppIcon } from '@components/common';
-import { colors, fontFamilies, shadows } from '@theme';
+import { colors, fontFamilies } from '@theme';
 import { cityService } from '@services';
 import type { City } from '@appTypes';
 import {
   FilterState,
   DEFAULT_FILTER_STATE,
-  TOURISM_ACTIVITIES,
+  POPULAR_CUISINE_TYPES,
 } from '@appTypes';
 import { PriceWaveSlider } from './components/PriceWaveSlider';
 import type { RootStackParamList } from '@navigation/types';
@@ -37,13 +37,6 @@ const STAR_OPTIONS = [
   { value: 1, label: '1 ★' },
 ];
 
-const RATING_OPTIONS = [
-  { value: null, label: 'Tất cả' },
-  { value: 4.5, label: '4.5 ★ trở lên' },
-  { value: 4.0, label: '4.0 ★ trở lên' },
-  { value: 3.5, label: '3.5 ★ trở lên' },
-];
-
 export const FilterScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<FilterScreenRouteProp>();
@@ -55,7 +48,7 @@ export const FilterScreen: React.FC = () => {
   const [filters, setFilters] = useState<FilterState>(initialFilters);
   const [cities, setCities] = useState<City[]>([]);
 
-  // Tải danh sách thành phố từ API backend
+  // Tải danh sách thành phố từ API GET /cities
   useEffect(() => {
     let isMounted = true;
     const fetchCities = async () => {
@@ -87,33 +80,6 @@ export const FilterScreen: React.FC = () => {
     navigation.goBack();
   };
 
-  // Mở màn hình chọn hoạt động
-  const handleOpenActivities = () => {
-    navigation.navigate('SelectActivitiesScreen', {
-      selectedActivities: filters.selectedActivities,
-      onSelect: (newActivities: string[]) => {
-        setFilters((prev) => ({
-          ...prev,
-          selectedActivities: newActivities,
-        }));
-      },
-    });
-  };
-
-  // Tạo tóm tắt hoạt động đã chọn
-  const getActivitiesSummary = () => {
-    if (filters.selectedActivities.length === 0) {
-      return 'Chọn hoạt động & trải nghiệm';
-    }
-    if (filters.selectedActivities.length <= 2) {
-      const names = filters.selectedActivities
-        .map((id) => TOURISM_ACTIVITIES.find((a) => a.id === id)?.name)
-        .filter(Boolean);
-      return names.join(', ');
-    }
-    return `Đã chọn ${filters.selectedActivities.length} hoạt động`;
-  };
-
   return (
     <ScreenWrapper
       noPadding
@@ -143,12 +109,50 @@ export const FilterScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      {/* 2. Nội dung cuộn các tiêu chí lọc */}
+      {/* 2. Nội dung cuộn các tiêu chí lọc tương thích 1-1 với Swagger GET /places/{type} */}
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Khoảng giá với Biểu đồ sóng theo Figma */}
+        {/* Phân loại địa điểm (type: attraction | hotel | restaurant | cafe) */}
+        <View style={styles.section}>
+          <AppText style={styles.sectionTitle}>Loại hình địa điểm (type)</AppText>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipsRow}
+          >
+              {
+                PLACE_TYPES.map((typeItem) => {
+                  const isSelected = filters.type === typeItem.id;
+                  return (
+                    <TouchableOpacity
+                      key={typeItem.id}
+                      style={[styles.chip, isSelected && styles.chipActive]}
+                      activeOpacity={0.8}
+                      onPress={() =>
+                        setFilters((p) => ({
+                          ...p,
+                          type: typeItem.id as any,
+                        }))
+                      }
+                    >
+                      <AppText
+                        style={[
+                          styles.chipText,
+                          isSelected && styles.chipTextActive,
+                        ]}
+                      >
+                        {typeItem.label}
+                      </AppText>
+                    </TouchableOpacity>
+                  );
+                })
+              }
+          </ScrollView>
+        </View>
+
+        {/* Khoảng giá (minPrice / maxPrice cho hotel, restaurant, cafe; minFee / maxFee cho attraction) */}
         <PriceWaveSlider
           minPrice={filters.minPrice}
           maxPrice={filters.maxPrice}
@@ -161,100 +165,66 @@ export const FilterScreen: React.FC = () => {
           }}
         />
 
-        {/* Thành phố / Điểm đến */}
+        {/* Thành phố (city ID) */}
         <View style={styles.section}>
-          <AppText style={styles.sectionTitle}>Thành phố / Điểm đến</AppText>
+          <AppText style={styles.sectionTitle}>Thành phố (city)</AppText>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.chipsRow}
           >
-            <TouchableOpacity
-              style={[
-                styles.chip,
-                filters.cityId === null && styles.chipActive,
-              ]}
-              activeOpacity={0.8}
-              onPress={() => setFilters((p) => ({ ...p, cityId: null }))}
-            >
-              <AppText
+              <TouchableOpacity
                 style={[
-                  styles.chipText,
-                  filters.cityId === null && styles.chipTextActive,
+                  styles.chip,
+                  filters.city === null && styles.chipActive,
                 ]}
+                activeOpacity={0.8}
+                onPress={() => setFilters((p) => ({ ...p, city: null }))}
               >
-                Tất cả thành phố
-              </AppText>
-            </TouchableOpacity>
-
-            {cities.map((city) => {
-              const isSelected = filters.cityId === city._id;
-              return (
-                <TouchableOpacity
-                  key={city._id}
-                  style={[styles.chip, isSelected && styles.chipActive]}
-                  activeOpacity={0.8}
-                  onPress={() =>
-                    setFilters((p) => ({
-                      ...p,
-                      cityId: isSelected ? null : city._id,
-                    }))
-                  }
+                <AppText
+                  style={[
+                    styles.chipText,
+                    filters.city === null && styles.chipTextActive,
+                  ]}
                 >
-                  <AppText
-                    style={[
-                      styles.chipText,
-                      isSelected && styles.chipTextActive,
-                    ]}
-                  >
-                    {city.name}
-                  </AppText>
-                </TouchableOpacity>
-              );
-            })}
+                  Tất cả thành phố
+                </AppText>
+              </TouchableOpacity>
+
+              {
+                cities.map((cityItem) => {
+                  const isSelected = filters.city === cityItem._id;
+                  return (
+                    <TouchableOpacity
+                      key={cityItem._id}
+                      style={[styles.chip, isSelected && styles.chipActive]}
+                      activeOpacity={0.8}
+                      onPress={() =>
+                        setFilters((p) => ({
+                          ...p,
+                          city: isSelected ? null : cityItem._id,
+                        }))
+                      }
+                    >
+                      <AppText
+                        style={[
+                          styles.chipText,
+                          isSelected && styles.chipTextActive,
+                        ]}
+                      >
+                        {cityItem.name}
+                      </AppText>
+                    </TouchableOpacity>
+                  );
+                })
+              }
           </ScrollView>
         </View>
 
-        {/* Phân loại địa điểm */}
-        <View style={styles.section}>
-          <AppText style={styles.sectionTitle}>Loại hình địa điểm</AppText>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.chipsRow}
-          >
-            {PLACE_TYPES.map((type) => {
-              const isSelected = filters.placeType === type.id;
-              return (
-                <TouchableOpacity
-                  key={type.id}
-                  style={[styles.chip, isSelected && styles.chipActive]}
-                  activeOpacity={0.8}
-                  onPress={() =>
-                    setFilters((p) => ({
-                      ...p,
-                      placeType: type.id as any,
-                    }))
-                  }
-                >
-                  <AppText
-                    style={[
-                      styles.chipText,
-                      isSelected && styles.chipTextActive,
-                    ]}
-                  >
-                    {type.label}
-                  </AppText>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
-
-        {/* Hạng sao khách sạn (khi chọn Khách sạn hoặc Tất cả) */}
-        {(filters.placeType === 'all' || filters.placeType === 'hotel') && (
+          {/* Số sao khách sạn (stars: chỉ cho hotel theo Swagger) */ }
+        {(filters.type === 'all' || filters.type === 'hotel') && (
           <View style={styles.section}>
-            <AppText style={styles.sectionTitle}>Hạng sao khách sạn</AppText>
+            <AppText style={styles.sectionTitle}>Hạng sao khách sạn (stars)</AppText>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -289,76 +259,74 @@ export const FilterScreen: React.FC = () => {
           </View>
         )}
 
-        {/* Đánh giá tối thiểu */}
-        <View style={styles.section}>
-          <AppText style={styles.sectionTitle}>Đánh giá người dùng</AppText>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.chipsRow}
-          >
-            {RATING_OPTIONS.map((item, idx) => {
-              const isSelected = filters.minRating === item.value;
-              return (
-                <TouchableOpacity
-                  key={idx}
-                  style={[styles.chip, isSelected && styles.chipActive]}
-                  activeOpacity={0.8}
-                  onPress={() =>
-                    setFilters((p) => ({
-                      ...p,
-                      minRating: item.value,
-                    }))
-                  }
-                >
-                  <AppText
-                    style={[
-                      styles.chipText,
-                      isSelected && styles.chipTextActive,
-                    ]}
-                  >
-                    {item.label}
-                  </AppText>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
+                  {/* Loại ẩm thực (cuisineType: chỉ cho restaurant theo Swagger) */}
+                  {(filters.type === 'all' || filters.type === 'restaurant') && (
+                    <View style={styles.section}>
+                      <AppText style={styles.sectionTitle}>Loại ẩm thực (cuisineType)</AppText>
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.chipsRow}
+                      >
+                        <TouchableOpacity
+                          style={[
+                            styles.chip,
+                            filters.cuisineType === null && styles.chipActive,
+                          ]}
+                          activeOpacity={0.8}
+                          onPress={() => setFilters((p) => ({ ...p, cuisineType: null }))}
+                        >
+                          <AppText
+                            style={[
+                              styles.chipText,
+                              filters.cuisineType === null && styles.chipTextActive,
+                            ]}
+                          >
+                              Tất cả ẩm thực
+                </AppText>
+                        </TouchableOpacity>
 
-        {/* Hoạt động & Trải nghiệm (Dropdown kiểu dáng theo ảnh Figma) */}
-        <View style={styles.section}>
-          <AppText style={styles.sectionTitle}>Hoạt động & Trải nghiệm</AppText>
-          <TouchableOpacity
-            style={styles.dropdownBox}
-            activeOpacity={0.85}
-            onPress={handleOpenActivities}
-          >
-            <AppText
-              style={[
-                styles.dropdownText,
-                filters.selectedActivities.length > 0 &&
-                  styles.dropdownTextSelected,
-              ]}
-              numberOfLines={1}
-            >
-              {getActivitiesSummary()}
-            </AppText>
-            <AppIcon name="chevronDown" size={14} color="#64748B" />
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-
-      {/* 4. Nút Áp dụng (Save) cố định đáy màn hình */}
-      <View style={styles.bottomContainer}>
-        <TouchableOpacity
-          style={styles.applyButton}
-          activeOpacity={0.88}
-          onPress={handleApply}
+                        {POPULAR_CUISINE_TYPES.map((cuisine) => {
+                          const isSelected = filters.cuisineType === cuisine;
+                          return (
+                            <TouchableOpacity
+                              key={cuisine}
+                              style={[styles.chip, isSelected && styles.chipActive]}
+                              activeOpacity={0.8}
+                              onPress={() =>
+                                setFilters((p) => ({
+                                  ...p,
+                                  cuisineType: isSelected ? null : cuisine,
+                                }))
+                              }
+                            >
+        <AppText
+          style={[
+            styles.chipText,
+            isSelected && styles.chipTextActive,
+          ]}
         >
-          <AppText style={styles.applyText}>Áp dụng</AppText>
-        </TouchableOpacity>
-      </View>
-    </ScreenWrapper>
+          {cuisine}
+        </AppText>
+      </TouchableOpacity>
+      );
+              })}
+    </ScrollView>
+          </View >
+        )}
+      </ScrollView >
+
+{/* 3. Nút Áp dụng cố định đáy màn hình */ }
+<View style={styles.bottomContainer}>
+  <TouchableOpacity
+    style={styles.applyButton}
+    activeOpacity={0.88}
+    onPress={handleApply}
+  >
+    <AppText style={styles.applyText}>Áp dụng</AppText>
+  </TouchableOpacity>
+</View>
+    </ScreenWrapper >
   );
 };
 
@@ -398,7 +366,7 @@ const styles = StyleSheet.create({
     paddingBottom: 110,
   },
   section: {
-    marginBottom: 22,
+    marginBottom: 20,
   },
   sectionTitle: {
     fontFamily: fontFamilies.sfProDisplay.bold,
@@ -431,28 +399,6 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilies.sfProText.bold,
     color: colors.primary.main,
   },
-  dropdownBox: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 16,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  dropdownText: {
-    flex: 1,
-    fontFamily: fontFamilies.sfProText.regular,
-    fontSize: 14,
-    color: '#94A3B8',
-    marginRight: 10,
-  },
-  dropdownTextSelected: {
-    fontFamily: fontFamilies.sfProText.medium,
-    color: '#0F172A',
-  },
   bottomContainer: {
     position: 'absolute',
     bottom: 0,
@@ -464,7 +410,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: '#F1F5F9',
-    ...shadows.lg,
   },
   applyButton: {
     backgroundColor: colors.primary.main,
@@ -472,7 +417,6 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    ...shadows.sm,
   },
   applyText: {
     fontFamily: fontFamilies.sfProText.bold,
@@ -480,4 +424,3 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 });
-

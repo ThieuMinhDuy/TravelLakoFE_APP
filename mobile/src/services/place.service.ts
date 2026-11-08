@@ -172,4 +172,34 @@ export const placeService = {
       return { attractions: [], hotels: [], restaurants: [], cafes: [] };
     }
   },
+
+  /**
+   * Xem thông tin chi tiết một địa điểm theo loại và ID từ API GET /api/places/:type/:id
+   */
+  async getPlaceById(type: string, id: string): Promise<Place | null> {
+    try {
+      const typeLower = type.toLowerCase();
+      const res = await apiClient.get<any>(API_URLS.PLACES.DETAIL(typeLower, id));
+      const data = res.data;
+      if (data && data._id) {
+        return {
+          ...data,
+          itemType:
+            data.itemType ||
+            (typeLower === 'attraction'
+              ? 'Attraction'
+              : typeLower === 'hotel'
+              ? 'Hotel'
+              : typeLower === 'restaurant'
+              ? 'Restaurant'
+              : 'Cafe'),
+          city: typeof data.city === 'object' ? data.city?._id : data.city,
+        };
+      }
+      return null;
+    } catch (error) {
+      console.warn(`Lỗi khi gọi API getPlaceById(${type}, ${id}):`, error);
+      return null;
+    }
+  },
 };

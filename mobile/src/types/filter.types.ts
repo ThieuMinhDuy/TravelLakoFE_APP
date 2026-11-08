@@ -1,28 +1,40 @@
 export interface FilterState {
-  cityId: string | null;
-  placeType: 'all' | 'attraction' | 'hotel' | 'restaurant' | 'cafe';
+  type: 'all' | 'attraction' | 'hotel' | 'restaurant' | 'cafe';
+  city: string | null;
+  search?: string;
+  stars: number | null;
   minPrice: number;
   maxPrice: number;
-  selectedActivities: string[];
-  stars: number | null;
-  minRating: number | null;
+  cuisineType: string | null;
 }
+
+export const DEFAULT_FILTER_STATE: FilterState = {
+  type: 'all',
+  city: null,
+  search: '',
+  stars: null,
+  minPrice: 0,
+  maxPrice: 10000000,
+  cuisineType: null,
+};
+
+export const POPULAR_CUISINE_TYPES = [
+  'Hải sản tươi sống',
+  'Ẩm thực Việt ba miền',
+  'Đặc sản địa phương',
+  'Đặc sản miền Trung',
+  'Bún chả Hà Nội',
+  'Bánh mì đặc sản',
+  'Lẩu gà đặc sản',
+  'Nem nướng đặc sản',
+  'Món ăn gia đình',
+];
 
 export interface ActivityItem {
   id: string;
   name: string;
   emoji: string;
 }
-
-export const DEFAULT_FILTER_STATE: FilterState = {
-  cityId: null,
-  placeType: 'all',
-  minPrice: 0,
-  maxPrice: 10000000, // 10 triệu VNĐ
-  selectedActivities: [],
-  stars: null,
-  minRating: null,
-};
 
 export const TOURISM_ACTIVITIES: ActivityItem[] = [
   { id: 'beach', name: 'Biển đảo & Nghỉ dưỡng', emoji: '🏖️' },
@@ -38,4 +50,3 @@ export const TOURISM_ACTIVITIES: ActivityItem[] = [
   { id: 'photo_hunting', name: 'Tour săn mây & Nhiếp ảnh cảnh đẹp', emoji: '📸' },
   { id: 'spa_wellness', name: 'Nghỉ dưỡng Spa & Tắm khoáng nóng', emoji: '💆' },
 ];
-
