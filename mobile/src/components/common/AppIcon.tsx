@@ -26,6 +26,11 @@ import {
   faArrowUpRightFromSquare,
   faLightbulb,
   faClock,
+  faChevronDown,
+  faChevronLeft,
+  faChevronRight,
+  faCheck,
+  faArrowLeft,
 } from '@fortawesome/free-solid-svg-icons';
 import {
   faBookmark as faBookmarkRegular,
@@ -66,7 +71,12 @@ export type AppIconName =
   | 'export'
   | 'close'
   | 'lightbulb'
-  | 'clock';
+  | 'clock'
+  | 'chevronDown'
+  | 'chevronLeft'
+  | 'chevronRight'
+  | 'check'
+  | 'arrowLeft';
 
 const APP_ICONS: Record<AppIconName, IconDefinition> = {
   home: faHouse,
@@ -97,6 +107,11 @@ const APP_ICONS: Record<AppIconName, IconDefinition> = {
   close: faXmark,
   lightbulb: faLightbulb,
   clock: faClock,
+  chevronDown: faChevronDown,
+  chevronLeft: faChevronLeft,
+  chevronRight: faChevronRight,
+  check: faCheck,
+  arrowLeft: faArrowLeft,
 };
 
 const colorMap: Record<string, string> = {

@@ -4,6 +4,7 @@ import {
   RefreshControl,
   Alert,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { ScreenWrapper } from '@components/common';
 import { colors } from '@theme';
 import {
@@ -19,9 +20,12 @@ import {
   TravelTipsSection,
 } from './components';
 import { cityService, placeService, favoriteService } from '@services';
-import type { City, Place } from '@appTypes';
+import type { City, Place, FilterState } from '@appTypes';
+import { DEFAULT_FILTER_STATE } from '@appTypes';
 
 export const HomeScreen: React.FC = () => {
+  const navigation = useNavigation<any>();
+
   // State quản lý dữ liệu từ các API
   const [cities, setCities] = useState<City[]>([]);
   const [places, setPlaces] = useState<Place[]>([]);
@@ -34,6 +38,7 @@ export const HomeScreen: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedCityId, setSelectedCityId] = useState<string | null>(null);
+  const [activeFilters, setActiveFilters] = useState<FilterState>(DEFAULT_FILTER_STATE);
 
   // State loading & pull-to-refresh
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -141,6 +146,7 @@ export const HomeScreen: React.FC = () => {
     setIsRefreshing(true);
     setSelectedCityId(null);
     setSelectedCategoryId(null);
+    setActiveFilters(DEFAULT_FILTER_STATE);
     setSearchQuery('');
     loadInitialData();
   }, [loadInitialData]);
@@ -176,6 +182,21 @@ export const HomeScreen: React.FC = () => {
     }
   };
 
+  // Xử lý mở màn hình bộ lọc
+  const handleOpenFilter = () => {
+    navigation.navigate('FilterScreen', {
+      currentFilters: {
+        ...activeFilters,
+        cityId: selectedCityId,
+      },
+      onApply: (newFilters: FilterState) => {
+        setActiveFilters(newFilters);
+        setSelectedCityId(newFilters.cityId);
+        fetchPlaces(newFilters.cityId, searchQuery);
+      },
+    });
+  };
+
   // Xử lý chọn danh mục để lọc (Beach, Mountain, Hotel, Dining, Cafe...)
   const handleSelectCategory = (categoryId: string) => {
     setSelectedCategoryId((prev) => (prev === categoryId ? null : categoryId));
@@ -185,6 +206,7 @@ export const HomeScreen: React.FC = () => {
   const handleResetFilters = () => {
     setSelectedCityId(null);
     setSelectedCategoryId(null);
+    setActiveFilters(DEFAULT_FILTER_STATE);
     setSearchQuery('');
     fetchPlaces(null, '');
   };
@@ -202,10 +224,50 @@ export const HomeScreen: React.FC = () => {
     return 'Điểm đến thịnh hành';
   }, [activeCity]);
 
-  // Lọc địa điểm hiển thị theo danh mục và tìm kiếm nội bộ
+  // Lọc điểm tham quan hiển thị theo danh mục, tìm kiếm và bộ lọc nâng cao
   const filteredPlaces = useMemo(() => {
     return places.filter((place) => {
-      // 1. Lọc theo danh mục
+      // 1. Phân loại theo placeType của bộ lọc (nếu đã chọn lọc riêng nhóm khác thì ẩn ở đây)
+      if (activeFilters.placeType !== 'all' && activeFilters.placeType !== 'attraction') {
+        return false;
+      }
+
+      // 2. Lọc theo khoảng giá (nếu điểm có admissionFee)
+      if (place.admissionFee !== undefined && place.admissionFee > 0) {
+        if (
+          place.admissionFee < activeFilters.minPrice ||
+          place.admissionFee > activeFilters.maxPrice
+        ) {
+          return false;
+        }
+      }
+
+      // 3. Lọc theo đánh giá tối thiểu
+      if (
+        activeFilters.minRating !== null &&
+        (place.rating || 0) < activeFilters.minRating
+      ) {
+        return false;
+      }
+
+      // 4. Lọc theo hoạt động du lịch đã chọn
+      if (activeFilters.selectedActivities.length > 0) {
+        const textToMatch = `${place.name} ${place.description} ${place.category || ''}`.toLowerCase();
+        const matchesAny = activeFilters.selectedActivities.some((actId) => {
+          if (actId === 'beach') return textToMatch.includes('biển') || textToMatch.includes('beach') || textToMatch.includes('đảo');
+          if (actId === 'trekking') return textToMatch.includes('núi') || textToMatch.includes('trekking') || textToMatch.includes('đỉnh');
+          if (actId === 'food_tour') return textToMatch.includes('ẩm thực') || textToMatch.includes('ăn') || textToMatch.includes('đặc sản');
+          if (actId === 'heritage') return textToMatch.includes('chùa') || textToMatch.includes('đền') || textToMatch.includes('cổ') || textToMatch.includes('di tích');
+          if (actId === 'camping') return textToMatch.includes('cắm trại') || textToMatch.includes('camping') || textToMatch.includes('dã ngoại');
+          if (actId === 'cafe_chill') return textToMatch.includes('cafe') || textToMatch.includes('cà phê') || textToMatch.includes('view');
+          if (actId === 'nightlife') return textToMatch.includes('đêm') || textToMatch.includes('bar') || textToMatch.includes('phố đi bộ');
+          if (actId === 'water_sport') return textToMatch.includes('thuyền') || textToMatch.includes('chèo') || textToMatch.includes('sup') || textToMatch.includes('lặn');
+          return true;
+        });
+        if (!matchesAny) return false;
+      }
+
+      // 5. Lọc theo danh mục chọn nhanh
       if (selectedCategoryId) {
         const placeCategory = place.category?.toLowerCase() || '';
         const placeType = place.itemType?.toLowerCase() || '';
@@ -230,7 +292,82 @@ export const HomeScreen: React.FC = () => {
 
       return true;
     });
-  }, [places, selectedCategoryId]);
+  }, [places, selectedCategoryId, activeFilters]);
+
+  // Lọc danh sách khách sạn theo bộ lọc nâng cao
+  const filteredHotels = useMemo(() => {
+    return hotels.filter((hotel) => {
+      if (activeFilters.placeType !== 'all' && activeFilters.placeType !== 'hotel') {
+        return false;
+      }
+      if (hotel.pricePerNight !== undefined) {
+        if (
+          hotel.pricePerNight < activeFilters.minPrice ||
+          hotel.pricePerNight > activeFilters.maxPrice
+        ) {
+          return false;
+        }
+      }
+      if (activeFilters.stars !== null && hotel.stars !== activeFilters.stars) {
+        return false;
+      }
+      if (
+        activeFilters.minRating !== null &&
+        (hotel.rating || 0) < activeFilters.minRating
+      ) {
+        return false;
+      }
+      return true;
+    });
+  }, [hotels, activeFilters]);
+
+  // Lọc danh sách nhà hàng ẩm thực theo bộ lọc nâng cao
+  const filteredRestaurants = useMemo(() => {
+    return restaurants.filter((res) => {
+      if (activeFilters.placeType !== 'all' && activeFilters.placeType !== 'restaurant') {
+        return false;
+      }
+      if (res.price !== undefined) {
+        if (
+          res.price < activeFilters.minPrice ||
+          res.price > activeFilters.maxPrice
+        ) {
+          return false;
+        }
+      }
+      if (
+        activeFilters.minRating !== null &&
+        (res.rating || 0) < activeFilters.minRating
+      ) {
+        return false;
+      }
+      return true;
+    });
+  }, [restaurants, activeFilters]);
+
+  // Lọc danh sách quán cafe theo bộ lọc nâng cao
+  const filteredCafes = useMemo(() => {
+    return cafes.filter((cafe) => {
+      if (activeFilters.placeType !== 'all' && activeFilters.placeType !== 'cafe') {
+        return false;
+      }
+      if (cafe.price !== undefined) {
+        if (
+          cafe.price < activeFilters.minPrice ||
+          cafe.price > activeFilters.maxPrice
+        ) {
+          return false;
+        }
+      }
+      if (
+        activeFilters.minRating !== null &&
+        (cafe.rating || 0) < activeFilters.minRating
+      ) {
+        return false;
+      }
+      return true;
+    });
+  }, [cafes, activeFilters]);
 
   return (
     <ScreenWrapper
@@ -272,12 +409,7 @@ export const HomeScreen: React.FC = () => {
         onSubmitEditing={() => {
           fetchPlaces(selectedCityId, searchQuery);
         }}
-        onFilterPress={() => {
-          Alert.alert(
-            'Bộ lọc',
-            'Chọn mức giá, đánh giá sao hoặc khoảng cách để tinh chỉnh kết quả.'
-          );
-        }}
+        onFilterPress={handleOpenFilter}
       />
 
       {/* 4. Section 1 theo chuẩn Figma: "Where would you like to visit?" */}
@@ -318,7 +450,7 @@ export const HomeScreen: React.FC = () => {
 
       {/* 8. [MỚI] Featured Hotels & Resorts (GET /api/places/hotel) */}
       <FeaturedHotelsSection
-        hotels={hotels}
+        hotels={filteredHotels}
         title={activeCity ? `Khách sạn tại ${activeCity.name}` : 'Khách sạn & Khu nghỉ dưỡng'}
         isLoading={isPlacesLoading}
         favoriteIds={favoriteIds}
@@ -334,8 +466,8 @@ export const HomeScreen: React.FC = () => {
 
       {/* 9. [MỚI] Culinary & Coffee Spots (GET /api/places/restaurant & cafe) */}
       <CulinarySection
-        restaurants={restaurants}
-        cafes={cafes}
+        restaurants={filteredRestaurants}
+        cafes={filteredCafes}
         title={activeCity ? `Ẩm thực tại ${activeCity.name}` : 'Ẩm thực & Quán Cafe'}
         isLoading={isPlacesLoading}
         favoriteIds={favoriteIds}

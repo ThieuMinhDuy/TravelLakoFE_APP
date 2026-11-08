@@ -1,6 +1,7 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { FilterState } from '@appTypes';
 
 /**
  * Authentication Stack Param List
@@ -35,6 +36,14 @@ export type RootStackParamList = {
   ProfileScreen: undefined;
   EditProfileScreen: undefined;
   SettingsScreen: undefined;
+  FilterScreen: {
+    currentFilters?: FilterState;
+    onApply?: (filters: FilterState) => void;
+  } | undefined;
+  SelectActivitiesScreen: {
+    selectedActivities?: string[];
+    onSelect?: (activities: string[]) => void;
+  } | undefined;
 };
 
 export type MainTabScreenProps<T extends keyof MainTabParamList> =

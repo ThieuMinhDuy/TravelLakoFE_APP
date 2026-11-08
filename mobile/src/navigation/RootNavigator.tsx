@@ -7,6 +7,8 @@ import { AuthNavigator } from './AuthNavigator';
 import { MainTabNavigator } from './MainTabNavigator';
 import { EditProfileScreen } from '@screens/Profile/EditProfileScreen';
 import { SettingsScreen } from '@screens/Profile/SettingsScreen';
+import { FilterScreen } from '@screens/Home/FilterScreen';
+import { SelectActivitiesScreen } from '@screens/Home/SelectActivitiesScreen';
 import { useAuthStore } from '@store/useAuthStore';
 import { colors } from '@theme';
 
@@ -49,6 +51,15 @@ export const RootNavigator: React.FC = () => {
           <Stack.Screen
             name={SCREEN_NAMES.SETTINGS as 'SettingsScreen'}
             component={SettingsScreen}
+          />
+          <Stack.Screen
+            name={SCREEN_NAMES.FILTER as 'FilterScreen'}
+            component={FilterScreen}
+            options={{ animation: 'slide_from_bottom' }}
+          />
+          <Stack.Screen
+            name={SCREEN_NAMES.SELECT_ACTIVITIES as 'SelectActivitiesScreen'}
+            component={SelectActivitiesScreen}
           />
         </>
       ) : (
