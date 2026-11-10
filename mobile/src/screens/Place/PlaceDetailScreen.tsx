@@ -379,20 +379,6 @@ export const PlaceDetailScreen: React.FC = () => {
             style={styles.heroImage}
             resizeMode="cover"
           />
-
-          {/* Floating Favorite Button (Dark Blue Circle with Gold/Red Heart) */}
-          <TouchableOpacity
-            style={styles.favoriteButton}
-            activeOpacity={0.8}
-            onPress={handleToggleFavorite}
-            disabled={isTogglingFavorite}
-          >
-            <AppIcon
-              name="saved"
-              size={18}
-              color={isFavorite ? '#EF4444' : '#F59E0B'}
-            />
-          </TouchableOpacity>
         </View>
 
         {/* 3. Amenities & Highlights Row (Wifi, Breakfast, Star Rating) */}
@@ -453,7 +439,7 @@ export const PlaceDetailScreen: React.FC = () => {
 
         {/* 6. Description Section with Read more toggle */}
         <View style={styles.sectionContainer}>
-          <AppText variant="h3" color="primary" style={styles.sectionTitleBlue}>
+          <AppText variant="h3" color="main" style={styles.sectionTitle}>
             Description
           </AppText>
 
@@ -482,7 +468,7 @@ export const PlaceDetailScreen: React.FC = () => {
         {/* 7. Photos Section */}
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeaderRow}>
-            <AppText variant="h3" color="primary" style={styles.sectionTitleBlue}>
+            <AppText variant="h3" color="main" style={styles.sectionTitle}>
               Photos
             </AppText>
 
@@ -524,7 +510,7 @@ export const PlaceDetailScreen: React.FC = () => {
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeaderRow}>
             <View style={styles.reviewsTitleGroup}>
-              <AppText variant="h3" color="main" style={styles.reviewsTitle}>
+              <AppText variant="h3" color="main" style={styles.sectionTitle}>
                 Reviews
               </AppText>
               <AppText variant="body" color="sub" style={styles.reviewsSubtitle}>
@@ -938,22 +924,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  favoriteButton: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#0A3A60', // Dark Blue circle as in design
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 5,
-  },
 
   // 3. Highlights Bar
   highlightsRow: {
@@ -1008,10 +978,10 @@ const styles = StyleSheet.create({
   sectionContainer: {
     marginTop: 22,
   },
-  sectionTitleBlue: {
+  sectionTitle: {
     fontFamily: fontFamilies.heading.bold,
     fontSize: 18,
-    color: '#0369A1', // Primary Sky Blue
+    color: '#0F172A',
   },
   descriptionText: {
     marginTop: 8,
@@ -1063,9 +1033,6 @@ const styles = StyleSheet.create({
   // 8. Reviews Section
   reviewsTitleGroup: {
     flex: 1,
-  },
-  reviewsTitle: {
-    fontSize: 18,
   },
   reviewsSubtitle: {
     fontSize: 13,
