@@ -54,6 +54,8 @@ export const API_URLS = {
   // Gemini AI (/api/ai)
   AI: {
     CHAT: '/ai/chat',
+    SUGGEST: '/ai/suggest',
+    OPTIMIZE: (tripId: string) => `/ai/optimize/${tripId}`,
     GENERATE_PLAN: '/ai/generate-plan',
     PARSE_ITINERARY: '/ai/parse-itinerary',
     OPTIMIZE_ROUTE: '/ai/optimize-route',
