@@ -13,13 +13,13 @@ import {
   HomeSearchBar,
   WhereToVisitSection,
   PopularDestinationsSection,
-  CategorySection,
   AITripBanner,
   FeaturedHotelsSection,
   CulinarySection,
   TravelTipsSection,
 } from './components';
 import { cityService, placeService, favoriteService } from '@services';
+import { SCREEN_NAMES } from '@constants/screenNames';
 import type { City, Place, FilterState } from '@appTypes';
 import { DEFAULT_FILTER_STATE } from '@appTypes';
 
@@ -36,7 +36,6 @@ export const HomeScreen: React.FC = () => {
 
   // State bộ lọc và tìm kiếm
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedCityId, setSelectedCityId] = useState<string | null>(null);
   const [activeFilters, setActiveFilters] = useState<FilterState>(DEFAULT_FILTER_STATE);
 
@@ -189,7 +188,6 @@ export const HomeScreen: React.FC = () => {
     const onRefresh = useCallback(() => {
       setIsRefreshing(true);
       setSelectedCityId(null);
-      setSelectedCategoryId(null);
       setActiveFilters(DEFAULT_FILTER_STATE);
       setSearchQuery('');
       loadInitialData();
@@ -246,46 +244,20 @@ export const HomeScreen: React.FC = () => {
     };
 
     /**
-     * Gọi API GET /places/{type}/{id} để lấy dữ liệu chi tiết một địa điểm theo Swagger docs
+     * Chuyển sang màn hình chi tiết địa điểm PlaceDetailScreen
      */
-    const handlePlacePress = async (place: Place) => {
-      try {
-        const type = (place.itemType || 'attraction').toLowerCase();
-        const detail = await placeService.getPlaceById(type, place._id);
-        const target = detail || place;
-
-        const priceInfo = target.pricePerNight
-          ? `\nGiá phòng: ${target.pricePerNight.toLocaleString('vi-VN')} đ/đêm`
-          : target.admissionFee !== undefined && target.admissionFee > 0
-            ? `\nGiá vé: ${target.admissionFee.toLocaleString('vi-VN')} đ`
-            : target.price
-              ? `\nMức giá: ~${target.price.toLocaleString('vi-VN')} đ`
-              : '';
-        const starsInfo = target.stars ? ` (${target.stars}★)` : '';
-        const cityName =
-          typeof target.city === 'object'
-            ? (target.city as any)?.name
-            : cities.find((c) => c._id === target.city)?.name || '';
-
-        Alert.alert(
-          target.name + starsInfo,
-          `${target.description}\n\nĐịa chỉ: ${target.address}${cityName ? `, ${cityName}` : ''}${priceInfo}\nĐánh giá: ${target.rating || 4.6}★ (${target.numReviews || 0} đánh giá)`,
-          [{ text: 'Đóng' }]
-        );
-      } catch {
-        Alert.alert(place.name, place.description);
-      }
-    };
-
-    // Xử lý chọn danh mục để lọc nhanh (Beach, Mountain...)
-    const handleSelectCategory = (categoryId: string) => {
-      setSelectedCategoryId((prev) => (prev === categoryId ? null : categoryId));
+    const handlePlacePress = (place: Place) => {
+      const placeType = (place.itemType || 'Attraction') as 'Attraction' | 'Hotel' | 'Restaurant' | 'Cafe';
+      navigation.navigate(SCREEN_NAMES.PLACE_DETAIL as any, {
+        placeId: place._id,
+        placeType,
+        initialPlace: place,
+      });
     };
 
     // Xử lý reset tất cả bộ lọc khi ấn "See all"
     const handleResetFilters = () => {
       setSelectedCityId(null);
-      setSelectedCategoryId(null);
       setActiveFilters(DEFAULT_FILTER_STATE);
       setSearchQuery('');
       loadPlacesWithFilters(DEFAULT_FILTER_STATE, '');
@@ -324,19 +296,8 @@ export const HomeScreen: React.FC = () => {
           else if (activeFilters.type === 'cafe') baseList = cafes;
         }
 
-        if (selectedCategoryId) {
-          const cat = selectedCategoryId.toLowerCase();
-          return baseList.filter((p) => {
-            const pCat = (p.category || '').toLowerCase();
-            const pName = p.name.toLowerCase();
-            if (cat === 'beach') return pCat.includes('beach') || pName.includes('beach') || pName.includes('biển');
-            if (cat === 'mountain') return pCat.includes('mountain') || pName.includes('hill') || pName.includes('núi');
-            return true;
-          });
-        }
-
         return baseList;
-      }, [places, hotels, restaurants, cafes, activeFilters.type, selectedCategoryId]);
+      }, [places, hotels, restaurants, cafes, activeFilters.type]);
 
   return (
     <ScreenWrapper
@@ -400,16 +361,7 @@ export const HomeScreen: React.FC = () => {
         onResetCityFilter={handleResetFilters}
       />
 
-      {/* 6. Section 3 theo chuẩn Figma: "Choose Category" (Beach, Mountain...) */}
-      <CategorySection
-        selectedCategoryId={selectedCategoryId}
-        onSelectCategory={handleSelectCategory}
-        onSeeAllPress={() => {
-          setSelectedCategoryId(null);
-        }}
-      />
-
-      {/* 7. [MỚI] AI Trip Planner Banner: Chuyển thẳng sang tab AIChatTab */}
+      {/* 6. [MỚI] AI Trip Planner Banner: Chuyển thẳng sang tab AIChatTab */}
       <AITripBanner />
 
       {/* 8. [MỚI] Featured Hotels & Resorts (GET /api/places/hotel) */}

@@ -31,6 +31,7 @@ export const SCREEN_NAMES = {
   // Home / Discovery Flow
   FILTER: 'FilterScreen',
   SELECT_ACTIVITIES: 'SelectActivitiesScreen',
+  PLACE_DETAIL: 'PlaceDetailScreen',
 } as const;
 
 export type ScreenNameValue = typeof SCREEN_NAMES[keyof typeof SCREEN_NAMES];

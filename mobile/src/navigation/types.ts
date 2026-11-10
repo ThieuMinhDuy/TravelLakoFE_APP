@@ -1,7 +1,7 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { FilterState } from '@appTypes';
+import type { FilterState, Place, PlaceItemType } from '@appTypes';
 
 /**
  * Authentication Stack Param List
@@ -44,6 +44,11 @@ export type RootStackParamList = {
     selectedActivities?: string[];
     onSelect?: (activities: string[]) => void;
   } | undefined;
+  PlaceDetailScreen: {
+    placeId: string;
+    placeType: PlaceItemType;
+    initialPlace?: Place;
+  };
 };
 
 export type MainTabScreenProps<T extends keyof MainTabParamList> =

@@ -9,6 +9,7 @@ import { EditProfileScreen } from '@screens/Profile/EditProfileScreen';
 import { SettingsScreen } from '@screens/Profile/SettingsScreen';
 import { FilterScreen } from '@screens/Home/FilterScreen';
 import { SelectActivitiesScreen } from '@screens/Home/SelectActivitiesScreen';
+import { PlaceDetailScreen } from '@screens/Place/PlaceDetailScreen';
 import { useAuthStore } from '@store/useAuthStore';
 import { colors } from '@theme';
 
@@ -60,6 +61,10 @@ export const RootNavigator: React.FC = () => {
           <Stack.Screen
             name={SCREEN_NAMES.SELECT_ACTIVITIES as 'SelectActivitiesScreen'}
             component={SelectActivitiesScreen}
+          />
+          <Stack.Screen
+            name={SCREEN_NAMES.PLACE_DETAIL as 'PlaceDetailScreen'}
+            component={PlaceDetailScreen}
           />
         </>
       ) : (

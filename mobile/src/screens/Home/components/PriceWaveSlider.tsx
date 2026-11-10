@@ -5,9 +5,8 @@ import {
   PanResponder,
   LayoutChangeEvent,
 } from 'react-native';
-import Svg, { Defs, ClipPath, Rect, Path } from 'react-native-svg';
 import { AppText } from '@components/common';
-import { fontFamilies, shadows } from '@theme';
+import { colors, fontFamilies, shadows } from '@theme';
 
 interface PriceWaveSliderProps {
   minPrice: number;
@@ -18,11 +17,8 @@ interface PriceWaveSliderProps {
   onChange: (min: number, max: number) => void;
 }
 
-const THUMB_SIZE = 24;
-const SVG_HEIGHT = 65;
-// Đường cong sóng mô phỏng phân bố giá theo thiết kế Figma
-const WAVE_PATH =
-  'M 0 52 C 15 52, 20 40, 30 28 C 40 16, 46 25, 52 22 C 60 18, 65 4, 72 4 C 78 4, 82 22, 90 32 C 95 38, 98 48, 100 52 L 100 60 L 0 60 Z';
+const THUMB_SIZE = 26;
+const TRACK_HEIGHT = 6;
 
 export const PriceWaveSlider: React.FC<PriceWaveSliderProps> = ({
   minPrice,
@@ -69,10 +65,6 @@ export const PriceWaveSlider: React.FC<PriceWaveSliderProps> = ({
   const minX = getXFromValue(localMin);
   const maxX = getXFromValue(localMax);
 
-  // Tính tỷ lệ % cho ClipPath trong SVG viewBox (0 -> 100)
-  const minPercent = Math.max(0, Math.min(100, (localMin - minLimit) / (maxLimit - minLimit) * 100));
-  const maxPercent = Math.max(0, Math.min(100, (localMax - minLimit) / (maxLimit - minLimit) * 100));
-
   // PanResponder cho Thumb Min
   const minPan = useRef(
     PanResponder.create({
@@ -80,7 +72,6 @@ export const PriceWaveSlider: React.FC<PriceWaveSliderProps> = ({
       onMoveShouldSetPanResponder: () => true,
       onPanResponderMove: (_, gestureState) => {
         const newX = gestureState.dx;
-        // Lấy toạ độ xuất phát
         const targetX = getXFromValue(localMin) + newX;
         let newVal = getValueFromX(targetX);
         newVal = Math.max(minLimit, Math.min(newVal, localMax - step));
@@ -113,7 +104,7 @@ export const PriceWaveSlider: React.FC<PriceWaveSliderProps> = ({
   // Định dạng hiển thị tiền tệ
   const formatPrice = (val: number, isMax = false) => {
     if (isMax && val >= maxLimit) {
-      return `${(maxLimit).toLocaleString('vi-VN')} đ+`;
+      return `${maxLimit.toLocaleString('vi-VN')} đ+`;
     }
     return `${val.toLocaleString('vi-VN')} đ`;
   };
@@ -128,34 +119,12 @@ export const PriceWaveSlider: React.FC<PriceWaveSliderProps> = ({
         </AppText>
       </View>
 
-      {/* Vùng biểu đồ dạng sóng & Slider Track */}
+      {/* Thanh trượt điều chỉnh khoảng giá */}
       <View style={styles.sliderArea} onLayout={onLayout}>
-        {/* SVG Biểu đồ sóng */}
-        <Svg
-          width="100%"
-          height={SVG_HEIGHT}
-          viewBox="0 0 100 60"
-          preserveAspectRatio="none"
-          style={styles.svgWave}
-        >
-          <Defs>
-            <ClipPath id="waveRangeClip">
-              <Rect
-                x={`${minPercent}`}
-                y="0"
-                width={`${Math.max(maxPercent - minPercent, 0)}`}
-                height="60"
-              />
-            </ClipPath>
-          </Defs>
-          {/* Lớp nền sóng mờ bên ngoài khoảng giá */}
-          <Path d={WAVE_PATH} fill="#F1F5F9" />
-          {/* Lớp sóng nổi màu xanh bên trong khoảng giá */}
-          <Path d={WAVE_PATH} fill="#005BBF" clipPath="url(#waveRangeClip)" />
-        </Svg>
-
-        {/* Thanh ray (Track) ngang phía đáy */}
+        {/* Thanh ray nền xám */}
         <View style={styles.trackBackground} />
+
+        {/* Thanh ray kích hoạt màu xanh nằm giữa 2 nút kéo */}
         <View
           style={[
             styles.trackActive,
@@ -214,46 +183,37 @@ const styles = StyleSheet.create({
   valueText: {
     fontFamily: fontFamilies.sfProText.medium,
     fontSize: 14,
-    color: '#64748B',
+    color: colors.primary.main,
   },
   sliderArea: {
     width: '100%',
-    height: SVG_HEIGHT + 14,
+    height: 40,
     position: 'relative',
-    justifyContent: 'flex-end',
-  },
-  svgWave: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
+    justifyContent: 'center',
   },
   trackBackground: {
     position: 'absolute',
-    bottom: 9,
     left: THUMB_SIZE / 2,
     right: THUMB_SIZE / 2,
-    height: 4,
+    height: TRACK_HEIGHT,
     backgroundColor: '#E2E8F0',
-    borderRadius: 2,
+    borderRadius: TRACK_HEIGHT / 2,
   },
   trackActive: {
     position: 'absolute',
-    bottom: 9,
-    height: 4,
-    backgroundColor: '#005BBF',
-    borderRadius: 2,
+    height: TRACK_HEIGHT,
+    backgroundColor: colors.primary.main,
+    borderRadius: TRACK_HEIGHT / 2,
   },
   thumb: {
     position: 'absolute',
-    bottom: -1,
     left: 0,
     width: THUMB_SIZE,
     height: THUMB_SIZE,
     borderRadius: THUMB_SIZE / 2,
     backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#005BBF',
+    borderWidth: 2.5,
+    borderColor: colors.primary.main,
     alignItems: 'center',
     justifyContent: 'center',
     ...shadows.md,
@@ -262,7 +222,6 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#005BBF',
+    backgroundColor: colors.primary.main,
   },
 });
-

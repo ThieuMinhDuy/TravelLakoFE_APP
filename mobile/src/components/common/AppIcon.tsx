@@ -31,6 +31,7 @@ import {
   faChevronRight,
   faCheck,
   faArrowLeft,
+  faWifi,
 } from '@fortawesome/free-solid-svg-icons';
 import {
   faBookmark as faBookmarkRegular,
@@ -76,7 +77,9 @@ export type AppIconName =
   | 'chevronLeft'
   | 'chevronRight'
   | 'check'
-  | 'arrowLeft';
+  | 'arrowLeft'
+  | 'wifi'
+  | 'heart';
 
 const APP_ICONS: Record<AppIconName, IconDefinition> = {
   home: faHouse,
@@ -112,6 +115,8 @@ const APP_ICONS: Record<AppIconName, IconDefinition> = {
   chevronRight: faChevronRight,
   check: faCheck,
   arrowLeft: faArrowLeft,
+  wifi: faWifi,
+  heart: faHeart,
 };
 
 const colorMap: Record<string, string> = {

@@ -32,7 +32,8 @@ export const API_URLS = {
   // Reviews (/api/reviews)
   REVIEWS: {
     CREATE: '/reviews',
-    BY_PLACE: (placeId: string) => `/reviews/place/${placeId}`,
+    BY_PLACE: (itemType: string, itemId: string) => `/reviews/${itemType}/${itemId}`,
+    DELETE: (id: string) => `/reviews/${id}`,
   },
 
   // Favorites (/api/favorites)
@@ -45,6 +46,7 @@ export const API_URLS = {
   TRIPS: {
     BASE: '/trips',
     DETAIL: (id: string) => `/trips/${id}`,
+    ADD_PLACE: (id: string) => `/trips/${id}/schedule/places`,
     UPDATE_SCHEDULE: (id: string) => `/trips/${id}/schedule`,
     REORDER_SCHEDULE: (id: string) => `/trips/${id}/schedule/reorder`,
     CHECK_IN: (id: string) => `/trips/${id}/checkin`,
