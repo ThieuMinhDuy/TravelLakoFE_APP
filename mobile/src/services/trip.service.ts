@@ -45,6 +45,18 @@ export const tripService = {
   },
 
   /**
+   * GET /cities
+   * Lấy danh sách thành phố công khai
+   */
+  async getCities(): Promise<any[]> {
+    const res = await apiClient.get<any>(API_URLS.CITIES.BASE);
+    const data = res.data?.data || res.data;
+    if (Array.isArray(data?.cities)) return data.cities;
+    if (Array.isArray(data)) return data;
+    return [];
+  },
+
+  /**
    * POST /trips
    * Tạo chuyến đi mới
    */
