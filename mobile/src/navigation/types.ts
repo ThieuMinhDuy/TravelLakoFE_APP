@@ -35,6 +35,7 @@ export type RootStackParamList = {
   ProfileScreen: undefined;
   EditProfileScreen: undefined;
   SettingsScreen: undefined;
+  TripDetailScreen: { tripId: string };
 };
 
 export type MainTabScreenProps<T extends keyof MainTabParamList> =

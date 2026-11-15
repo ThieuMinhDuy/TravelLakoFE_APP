@@ -51,14 +51,14 @@ const getPlaceTypeIcon = (type: string): IconDefinition => {
 
 const getPlaceTypeBadgeVariant = (
   type: string,
-): 'primary' | 'teal' | 'sand' | 'outline' => {
+): 'primary' | 'teal' | 'sand' | 'slate' => {
   switch (type?.toLowerCase()) {
     case 'hotel':
       return 'primary';
     case 'restaurant':
       return 'sand';
     case 'cafe':
-      return 'outline';
+      return 'slate';
     case 'attraction':
     default:
       return 'teal';
@@ -311,8 +311,8 @@ const styles = StyleSheet.create({
   },
   sheetContainer: {
     backgroundColor: colors.background.app,
-    borderTopLeftRadius: radius.xxl,
-    borderTopRightRadius: radius.xxl,
+    borderTopLeftRadius: radius.round,
+    borderTopRightRadius: radius.round,
     maxHeight: '88%',
     minHeight: '40%',
     ...shadows.lg,
@@ -324,8 +324,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     backgroundColor: colors.background.surface,
-    borderTopLeftRadius: radius.xxl,
-    borderTopRightRadius: radius.xxl,
+    borderTopLeftRadius: radius.round,
+    borderTopRightRadius: radius.round,
     borderBottomWidth: 1,
     borderBottomColor: colors.border.subtle,
   },

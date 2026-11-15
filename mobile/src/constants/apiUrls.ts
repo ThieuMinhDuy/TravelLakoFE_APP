@@ -1,10 +1,13 @@
 /**
  * Centralized API URLs for TravelLako
- * Maps 1-1 with docs/04_API_Reference.md
+ * Maps 1-1 with docs/04_API_Reference.md and api.md
+ * Lưu ý:
+ * - Các endpoint AI có tiền tố '/api' ở đầu: '/api/ai/...'
+ * - Các endpoint khác (trips, upload...) không có tiền tố '/api'
  */
 
 export const API_URLS = {
-  // Authentication (/api/auth)
+  // Authentication (/auth)
   AUTH: {
     REGISTER: '/auth/register',
     LOGIN: '/auth/login',
@@ -16,49 +19,54 @@ export const API_URLS = {
     PROFILE: '/auth/profile',
   },
 
-  // Cities (/api/cities)
+  // Cities (/cities)
   CITIES: {
     BASE: '/cities',
     DETAIL: (id: string) => `/cities/${id}`,
   },
 
-  // Places (/api/places)
+  // Places (/places)
   PLACES: {
     GLOBAL_SEARCH: '/places/search',
     BY_TYPE: (type: string) => `/places/${type}`,
     DETAIL: (type: string, id: string) => `/places/${type}/${id}`,
   },
 
-  // Reviews (/api/reviews)
+  // Reviews (/reviews)
   REVIEWS: {
     CREATE: '/reviews',
     BY_PLACE: (placeId: string) => `/reviews/place/${placeId}`,
   },
 
-  // Favorites (/api/favorites)
+  // Favorites (/favorites)
   FAVORITES: {
     BASE: '/favorites',
     TOGGLE: (placeId: string) => `/favorites/${placeId}`,
   },
 
-  // Trips (/api/trips)
+  // Trips (/trips)
   TRIPS: {
     BASE: '/trips',
     DETAIL: (id: string) => `/trips/${id}`,
-    UPDATE_SCHEDULE: (id: string) => `/trips/${id}/schedule`,
+    DELETE: (id: string) => `/trips/${id}`,
+    ADD_PLACE: (id: string) => `/trips/${id}/schedule/places`,
+    DELETE_PLACE: (tripId: string, subId: string) => `/trips/${tripId}/schedule/places/${subId}`,
     REORDER_SCHEDULE: (id: string) => `/trips/${id}/schedule/reorder`,
-    CHECK_IN: (id: string) => `/trips/${id}/checkin`,
+    CHECK_IN_PLACE: (tripId: string, subId: string) =>
+      `/trips/${tripId}/schedule/places/${subId}/check-in`,
     DIARY: (id: string) => `/trips/${id}/diary`,
   },
 
+  // Upload (/upload)
+  UPLOAD: '/upload',
+
   // Gemini AI (/api/ai)
   AI: {
-    CHAT: '/ai/chat',
-    SUGGEST: '/ai/suggest',
-    OPTIMIZE: (tripId: string) => `/ai/optimize/${tripId}`,
-    GENERATE_PLAN: '/ai/generate-plan',
-    PARSE_ITINERARY: '/ai/parse-itinerary',
-    OPTIMIZE_ROUTE: '/ai/optimize-route',
+    CHAT: '/api/ai/chat',
+    SUGGEST: '/api/ai/suggest',
+    OPTIMIZE: (tripId: string) => `/api/ai/optimize/${tripId}`,
+    GENERATE_PLAN: '/api/ai/generate-plan',
+    PARSE_ITINERARY: '/api/ai/parse-itinerary',
+    OPTIMIZE_ROUTE: '/api/ai/optimize-route',
   },
 } as const;
-

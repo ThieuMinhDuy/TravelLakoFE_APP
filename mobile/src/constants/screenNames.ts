@@ -27,6 +27,9 @@ export const SCREEN_NAMES = {
   PROFILE: 'ProfileScreen',
   EDIT_PROFILE: 'EditProfileScreen',
   SETTINGS: 'SettingsScreen',
+
+  // Schedule Flow
+  TRIP_DETAIL: 'TripDetailScreen',
 } as const;
 
 export type ScreenNameValue = typeof SCREEN_NAMES[keyof typeof SCREEN_NAMES];
