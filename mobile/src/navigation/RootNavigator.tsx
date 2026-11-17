@@ -7,6 +7,7 @@ import { AuthNavigator } from './AuthNavigator';
 import { MainTabNavigator } from './MainTabNavigator';
 import { EditProfileScreen } from '@screens/Profile/EditProfileScreen';
 import { SettingsScreen } from '@screens/Profile/SettingsScreen';
+import { TripDetailScreen } from '@screens/Schedule/TripDetail/TripDetailScreen';
 import { useAuthStore } from '@store/useAuthStore';
 import { colors } from '@theme';
 
@@ -49,6 +50,10 @@ export const RootNavigator: React.FC = () => {
           <Stack.Screen
             name={SCREEN_NAMES.SETTINGS as 'SettingsScreen'}
             component={SettingsScreen}
+          />
+          <Stack.Screen
+            name={SCREEN_NAMES.TRIP_DETAIL as 'TripDetailScreen'}
+            component={TripDetailScreen}
           />
         </>
       ) : (

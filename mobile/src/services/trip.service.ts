@@ -57,6 +57,29 @@ export const tripService = {
   },
 
   /**
+   * GET /places/:type?city=...&search=...
+   * Lấy danh sách địa điểm theo loại và thành phố để thêm vào lịch trình
+   */
+  async getPlacesByType(
+    type: string,
+    cityId?: string,
+    search?: string,
+  ): Promise<any[]> {
+    const lowerType = type.toLowerCase();
+    const params: Record<string, string> = {};
+    if (cityId) params.city = cityId;
+    if (search) params.search = search;
+
+    const res = await apiClient.get<any>(API_URLS.PLACES.BY_TYPE(lowerType), {
+      params,
+    });
+    const data = res.data?.data || res.data;
+    if (Array.isArray(data?.places)) return data.places;
+    if (Array.isArray(data)) return data;
+    return [];
+  },
+
+  /**
    * POST /trips
    * Tạo chuyến đi mới
    */
