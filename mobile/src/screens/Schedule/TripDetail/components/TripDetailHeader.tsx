@@ -7,6 +7,7 @@ import {
   faCity,
   faCalendarDays,
   faWallet,
+  faWandMagicSparkles,
 } from '@fortawesome/free-solid-svg-icons';
 import { AppText } from '@components/common';
 import { colors, spacing, radius } from '@theme';
@@ -17,6 +18,7 @@ export interface TripDetailHeaderProps {
   trip: Trip;
   onBack: () => void;
   onDelete: () => void;
+  onOpenAIOptimize?: () => void;
   isDeleting?: boolean;
 }
 
@@ -24,6 +26,7 @@ export const TripDetailHeader: React.FC<TripDetailHeaderProps> = ({
   trip,
   onBack,
   onDelete,
+  onOpenAIOptimize,
   isDeleting = false,
 }) => {
   const cityInfo =
@@ -61,15 +64,34 @@ export const TripDetailHeader: React.FC<TripDetailHeaderProps> = ({
           Chi Tiết Lịch Trình
         </AppText>
 
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={confirmDelete}
-          disabled={isDeleting}
-          style={[styles.iconBtn, styles.deleteBtn]}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <FontAwesomeIcon icon={faTrashCan} size={16} color={colors.status.error} />
-        </TouchableOpacity>
+        <View style={styles.rightActions}>
+          {/* Nút Tối ưu lộ trình AI */}
+          {onOpenAIOptimize && (
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={onOpenAIOptimize}
+              style={[styles.iconBtn, styles.aiBtn]}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <FontAwesomeIcon
+                icon={faWandMagicSparkles}
+                size={15}
+                color={colors.primary.main}
+              />
+            </TouchableOpacity>
+          )}
+
+          {/* Nút Xóa chuyến đi */}
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={confirmDelete}
+            disabled={isDeleting}
+            style={[styles.iconBtn, styles.deleteBtn]}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <FontAwesomeIcon icon={faTrashCan} size={15} color={colors.status.error} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Trip main info card banner */}
@@ -133,6 +155,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
   },
+  rightActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
   iconBtn: {
     width: 36,
     height: 36,
@@ -140,6 +167,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.background.subtle,
+  },
+  aiBtn: {
+    backgroundColor: colors.primary.soft,
+    borderWidth: 1,
+    borderColor: colors.primary.border,
   },
   deleteBtn: {
     backgroundColor: colors.status.errorBg,
@@ -168,4 +200,3 @@ const styles = StyleSheet.create({
     marginRight: spacing.xs,
   },
 });
-

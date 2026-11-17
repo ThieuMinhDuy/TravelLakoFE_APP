@@ -22,6 +22,7 @@ import {
   DaySelector,
   PlaceTimelineItem,
   AddPlaceModal,
+  AIOptimizeModal,
 } from './components';
 
 export const TripDetailScreen: React.FC = () => {
@@ -33,6 +34,7 @@ export const TripDetailScreen: React.FC = () => {
 
   const [activeDay, setActiveDay] = useState(1);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isOptimizeModalOpen, setIsOptimizeModalOpen] = useState(false);
   const [isDeletingTrip, setIsDeletingTrip] = useState(false);
 
   // Fetch dữ liệu chuyến đi
@@ -159,6 +161,7 @@ export const TripDetailScreen: React.FC = () => {
             trip={trip}
             onBack={() => navigation.goBack()}
             onDelete={handleDeleteTrip}
+            onOpenAIOptimize={() => setIsOptimizeModalOpen(true)}
             isDeleting={isDeletingTrip}
           />
           {schedule.length > 0 && (
@@ -200,12 +203,14 @@ export const TripDetailScreen: React.FC = () => {
             {places.map((place, index) => (
               <PlaceTimelineItem
                 key={place._id || index}
+                tripId={tripId}
                 place={place}
                 index={index}
                 totalPlaces={places.length}
                 onMoveUp={() => handleReorder(index, index - 1)}
                 onMoveDown={() => handleReorder(index, index + 1)}
                 onDelete={() => handleDeletePlace(place._id)}
+                onCheckInSuccess={() => refetch()}
               />
             ))}
           </View>
@@ -229,6 +234,14 @@ export const TripDetailScreen: React.FC = () => {
         activeDay={activeDay}
         totalDays={totalDays}
         onClose={() => setIsAddModalOpen(false)}
+        onSuccess={() => refetch()}
+      />
+
+      {/* Modal Tối Ưu Lộ Trình Bằng AI */}
+      <AIOptimizeModal
+        visible={isOptimizeModalOpen}
+        tripId={tripId}
+        onClose={() => setIsOptimizeModalOpen(false)}
         onSuccess={() => refetch()}
       />
     </ScreenWrapper>
@@ -272,4 +285,3 @@ const styles = StyleSheet.create({
     zIndex: 99,
   },
 });
-

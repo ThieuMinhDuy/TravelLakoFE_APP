@@ -1,5 +1,15 @@
-import React from 'react';
-import { View, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  Image,
+  PermissionsAndroid,
+  Platform,
+  ActivityIndicator,
+} from 'react-native';
+import Geolocation from '@react-native-community/geolocation';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
   faHotel,
@@ -13,29 +23,37 @@ import {
   faCheckCircle,
   faNoteSticky,
   faClock,
+  faLocationCrosshairs,
 } from '@fortawesome/free-solid-svg-icons';
 import { AppText, AppBadge, AppCard } from '@components/common';
 import { colors, spacing, radius } from '@theme';
-import { formatDate } from '@utils';
+import { formatDate, calculateDistanceInMeters, isWithinCheckInRadius } from '@utils';
+import { tripService } from '@services';
 import type { PlaceInSchedule, PlacePopulated } from '@appTypes';
 
 export interface PlaceTimelineItemProps {
+  tripId: string;
   place: PlaceInSchedule;
   index: number;
   totalPlaces: number;
   onMoveUp: () => void;
   onMoveDown: () => void;
   onDelete: () => void;
+  onCheckInSuccess?: () => void;
 }
 
 export const PlaceTimelineItem: React.FC<PlaceTimelineItemProps> = ({
+  tripId,
   place,
   index,
   totalPlaces,
   onMoveUp,
   onMoveDown,
   onDelete,
+  onCheckInSuccess,
 }) => {
+  const [isCheckingIn, setIsCheckingIn] = useState(false);
+
   // Lấy thông tin place khi được populate
   const populated =
     place.placeId && typeof place.placeId === 'object'
@@ -82,6 +100,114 @@ export const PlaceTimelineItem: React.FC<PlaceTimelineItemProps> = ({
         { text: 'Hủy', style: 'cancel' },
         { text: 'Xóa', style: 'destructive', onPress: onDelete },
       ],
+    );
+  };
+
+  // Xin quyền GPS trên Android
+  const requestLocationPermission = async (): Promise<boolean> => {
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+          {
+            title: 'Quyền truy cập GPS',
+            message: 'Ứng dụng cần quyền vị trí để kiểm tra khoảng cách check-in (< 200m).',
+            buttonNeutral: 'Hỏi lại sau',
+            buttonNegative: 'Từ chối',
+            buttonPositive: 'Đồng ý',
+          },
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      } catch (err) {
+        console.warn('Lỗi xin quyền vị trí:', err);
+        return false;
+      }
+    }
+    return true;
+  };
+
+  // Thực hiện gọi API Check-in
+  const performCheckIn = async (distance?: number) => {
+    try {
+      await tripService.checkInPlace(tripId, place._id, true);
+      Alert.alert(
+        'Check-in Thành Công! 🎉',
+        `Bạn đã check-in thành công tại "${placeName}"${
+          distance !== undefined ? ` (khoảng cách: ${distance}m)` : ''
+        }.`,
+      );
+      onCheckInSuccess?.();
+    } catch (err: any) {
+      Alert.alert('Lỗi', err?.message || 'Không thể check-in lúc này. Vui lòng thử lại.');
+    } finally {
+      setIsCheckingIn(false);
+    }
+  };
+
+  // Xử lý GPS Check-in với bán kính 200m
+  const handleGPSCheckIn = async () => {
+    if (place.visited) {
+      Alert.alert('Thông báo', `Bạn đã check-in tại "${placeName}" rồi.`);
+      return;
+    }
+
+    const hasPermission = await requestLocationPermission();
+    if (!hasPermission) {
+      Alert.alert('Cảnh báo', 'Bạn cần cấp quyền truy cập vị trí GPS để có thể check-in.');
+      return;
+    }
+
+    setIsCheckingIn(true);
+
+    Geolocation.getCurrentPosition(
+      async (position) => {
+        const userCoords = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        };
+
+        const placeCoords = populated?.coordinates;
+
+        // Nếu địa điểm chưa có tọa độ trong DB
+        if (
+          !placeCoords ||
+          typeof placeCoords.lat !== 'number' ||
+          typeof placeCoords.lng !== 'number'
+        ) {
+          setIsCheckingIn(false);
+          Alert.alert(
+            'Xác nhận Check-in',
+            `Địa điểm "${placeName}" chưa có dữ liệu tọa độ GPS trên hệ thống. Bạn có muốn xác nhận đã đến địa điểm này không?`,
+            [
+              { text: 'Hủy', style: 'cancel' },
+              { text: 'Xác nhận đã đến', onPress: () => performCheckIn() },
+            ],
+          );
+          return;
+        }
+
+        // Tính khoảng cách Haversine (đơn vị: mét)
+        const distance = calculateDistanceInMeters(userCoords, placeCoords);
+        const withinRadius = isWithinCheckInRadius(userCoords, placeCoords, 200);
+
+        if (withinRadius) {
+          await performCheckIn(distance);
+        } else {
+          setIsCheckingIn(false);
+          Alert.alert(
+            'Chưa Đến Địa Điểm',
+            `Khoảng cách hiện tại của bạn đến "${placeName}" là ${distance}m.\n\nTheo quy định, bạn cần ở trong bán kính 200m để có thể check-in thực tế.`,
+          );
+        }
+      },
+      (error) => {
+        setIsCheckingIn(false);
+        Alert.alert(
+          'Lỗi định vị',
+          'Không thể lấy tọa độ vị trí hiện tại của thiết bị: ' + error.message,
+        );
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 },
     );
   };
 
@@ -237,6 +363,46 @@ export const PlaceTimelineItem: React.FC<PlaceTimelineItemProps> = ({
               )}
             </View>
           </View>
+
+          {/* Nút Check-in GPS chân thẻ */}
+          <View style={styles.cardFooter}>
+            {place.visited ? (
+              <View style={styles.checkedInBox}>
+                <FontAwesomeIcon
+                  icon={faCheckCircle}
+                  size={13}
+                  color={colors.status.success}
+                  style={styles.footerIcon}
+                />
+                <AppText variant="captionMedium" color="main" style={styles.checkedInText}>
+                  Đã Check-in thành công
+                </AppText>
+              </View>
+            ) : (
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={handleGPSCheckIn}
+                disabled={isCheckingIn}
+                style={styles.checkInBtn}
+              >
+                {isCheckingIn ? (
+                  <ActivityIndicator size="small" color={colors.primary.main} />
+                ) : (
+                  <>
+                    <FontAwesomeIcon
+                      icon={faLocationCrosshairs}
+                      size={13}
+                      color={colors.primary.main}
+                      style={styles.footerIcon}
+                    />
+                    <AppText variant="captionMedium" color="primary">
+                      Check-in GPS (&lt; 200m)
+                    </AppText>
+                  </>
+                )}
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
       </AppCard>
     </View>
@@ -370,5 +536,35 @@ const styles = StyleSheet.create({
   },
   infoIcon: {
     marginRight: 4,
+  },
+  cardFooter: {
+    marginTop: spacing.sm,
+    paddingTop: spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: colors.border.subtle,
+  },
+  checkInBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.xs,
+    borderRadius: radius.md,
+    backgroundColor: colors.primary.soft,
+    borderWidth: 1,
+    borderColor: colors.primary.border,
+  },
+  checkedInBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.xs,
+    borderRadius: radius.md,
+    backgroundColor: colors.nature.light,
+  },
+  checkedInText: {
+    color: colors.status.success,
+  },
+  footerIcon: {
+    marginRight: spacing.xs,
   },
 });
