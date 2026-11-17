@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   FlatList,
@@ -26,9 +26,9 @@ import {
   ChatMessageBubble,
   ChatTypingIndicator,
   ChatInputBar,
-  QuickPrompts,
   ClearChatModal,
   PlanPreviewModal,
+  GeminiWelcomeView,
 } from './components';
 
 export const AIChatScreen: React.FC = () => {
@@ -51,21 +51,10 @@ export const AIChatScreen: React.FC = () => {
 
   const flatListRef = useRef<FlatList>(null);
 
-  // Lời chào mở đầu ngắn gọn kèm tên User khi bắt đầu chat
-  const welcomeMessage = useMemo<AIChatMessageUI>(() => {
-    return {
-      id: 'welcome-greeting',
-      role: 'model',
-      text: `Xin chào ${userName}! Tôi là trợ lý du lịch AI của TravelLako.\nBạn đang muốn lên kế hoạch hay tìm kiếm địa điểm nào hôm nay?`,
-      createdAt: new Date().toISOString(),
-    };
-  }, [userName]);
-
   // 1. Tải lịch sử trò chuyện từ Server
   const {
     data: serverHistory,
     isLoading: isLoadingHistory,
-    refetch: refetchHistory,
   } = useQuery({
     queryKey: [QUERY_KEYS.AI_CHAT_HISTORY],
     queryFn: () => aiService.getChatHistory(),
@@ -76,8 +65,8 @@ export const AIChatScreen: React.FC = () => {
   useEffect(() => {
     if (serverHistory && Array.isArray(serverHistory)) {
       if (serverHistory.length === 0) {
-        // Chưa có tin nhắn nào -> Hiển thị lời chào khởi tạo
-        setLocalMessages([welcomeMessage]);
+        // Chưa có tin nhắn nào -> Để mảng rỗng để hiện GeminiWelcomeView
+        setLocalMessages([]);
       } else {
         const formatted: AIChatMessageUI[] = serverHistory.map(
           (item: AIChatHistoryItem, index: number) => ({
@@ -91,9 +80,9 @@ export const AIChatScreen: React.FC = () => {
         setLocalMessages(formatted);
       }
     } else if (!isLoadingHistory) {
-      setLocalMessages([welcomeMessage]);
+      setLocalMessages([]);
     }
-  }, [serverHistory, isLoadingHistory, welcomeMessage]);
+  }, [serverHistory, isLoadingHistory]);
 
   // Tự động cuộn xuống đáy khi có tin nhắn mới
   const scrollToBottom = (animated = true) => {
@@ -120,12 +109,10 @@ export const AIChatScreen: React.FC = () => {
     };
 
     // Chuẩn bị payload lịch sử gửi lên Backend theo đúng chuẩn API
-    const historyPayload = localMessages
-      .filter((m) => m.id !== 'welcome-greeting')
-      .map((m) => ({
-        role: m.role,
-        parts: [{ text: m.text }],
-      }));
+    const historyPayload = localMessages.map((m) => ({
+      role: m.role,
+      parts: [{ text: m.text }],
+    }));
 
     // Cập nhật Optimistic ngay lên UI
     setLocalMessages((prev) => [...prev, userMessage]);
@@ -173,7 +160,6 @@ export const AIChatScreen: React.FC = () => {
 
   // 3. Thử lại khi tin nhắn bị lỗi
   const handleRetryMessage = (failedMessage: AIChatMessageUI) => {
-    // Xóa tin nhắn lỗi cũ và gửi lại
     setLocalMessages((prev) => prev.filter((m) => m.id !== failedMessage.id));
     handleSendMessage(failedMessage.text);
   };
@@ -183,10 +169,9 @@ export const AIChatScreen: React.FC = () => {
     try {
       setIsClearing(true);
       await aiService.clearChatHistory();
-      // Invalidate React Query cache
       queryClient.setQueryData([QUERY_KEYS.AI_CHAT_HISTORY], []);
-      // Reset về tin nhắn chào khởi tạo
-      setLocalMessages([welcomeMessage]);
+      // Reset về mảng rỗng -> Hiện lại màn hình chào GeminiWelcomeView
+      setLocalMessages([]);
       setIsClearModalVisible(false);
     } catch (error: any) {
       Alert.alert('Lỗi', error?.message || 'Không thể xóa lịch sử chat.');
@@ -220,14 +205,10 @@ export const AIChatScreen: React.FC = () => {
 
   const handleTripCreated = () => {
     setIsPreviewVisible(false);
-    // Điều hướng sang tab Quản lý lịch trình
     navigation.navigate(SCREEN_NAMES.SCHEDULE_TAB as any);
   };
 
-  // Chỉ tính số tin nhắn thực tế (bỏ qua tin nhắn chào ảo)
-  const actualMessageCount = localMessages.filter(
-    (m) => m.id !== 'welcome-greeting',
-  ).length;
+  const messageCount = localMessages.length;
 
   return (
     <ScreenWrapper
@@ -236,7 +217,7 @@ export const AIChatScreen: React.FC = () => {
       header={
         <ChatHeader
           onClearHistory={() => setIsClearModalVisible(true)}
-          messageCount={actualMessageCount}
+          messageCount={messageCount}
         />
       }
     >
@@ -253,7 +234,14 @@ export const AIChatScreen: React.FC = () => {
               Đang tải lịch sử trò chuyện...
             </AppText>
           </View>
+        ) : messageCount === 0 && !isThinking ? (
+          /* Màn hình chào mừng phong cách Gemini khi chưa có tin nhắn */
+          <GeminiWelcomeView
+            userName={userName}
+            onSelectPrompt={(prompt) => handleSendMessage(prompt)}
+          />
         ) : (
+          /* Danh sách tin nhắn khi cuộc trò chuyện bắt đầu */
           <FlatList
             ref={flatListRef}
             data={localMessages}
@@ -268,21 +256,11 @@ export const AIChatScreen: React.FC = () => {
             contentContainerStyle={styles.listContent}
             onContentSizeChange={() => scrollToBottom(false)}
             showsVerticalScrollIndicator={false}
-            ListFooterComponent={
-              <>
-                {isThinking && <ChatTypingIndicator />}
-                {/* Hiển thị thanh gợi ý câu hỏi nhanh khi bắt đầu cuộc trò chuyện */}
-                {actualMessageCount === 0 && (
-                  <View style={styles.quickPromptsWrapper}>
-                    <QuickPrompts onSelectPrompt={(prompt) => handleSendMessage(prompt)} />
-                  </View>
-                )}
-              </>
-            }
+            ListFooterComponent={isThinking ? <ChatTypingIndicator /> : undefined}
           />
         )}
 
-        {/* Thanh nhập liệu ở đáy màn hình */}
+        {/* Thanh soạn tin nhắn cố định ở đáy màn hình */}
         <ChatInputBar
           value={inputText}
           onChangeText={setInputText}
@@ -299,12 +277,12 @@ export const AIChatScreen: React.FC = () => {
         isLoading={isClearing}
       />
 
-      {/* Modal xem trước và tạo chuyến đi từ gợi ý AI */}
+      {/* Modal xem trước và lưu lịch trình */}
       <PlanPreviewModal
         visible={isPreviewVisible}
         onClose={() => setIsPreviewVisible(false)}
-        isLoading={isPreviewLoading}
         planData={previewPlanData}
+        isLoading={isPreviewLoading}
         onTripCreated={handleTripCreated}
       />
     </ScreenWrapper>
@@ -320,16 +298,15 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: spacing.xxl,
   },
   loadingText: {
     marginTop: spacing.sm,
   },
   listContent: {
-    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.lg,
     flexGrow: 1,
-    justifyContent: 'flex-start',
-  },
-  quickPromptsWrapper: {
-    marginTop: spacing.sm,
   },
 });

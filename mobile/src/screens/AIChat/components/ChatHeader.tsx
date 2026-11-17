@@ -31,7 +31,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
           <View style={styles.statusRow}>
             <View style={styles.onlineDot} />
             <AppText variant="tiny" color="sub">
-              Sẵn sàng • Gemini 2.5 Flash
+              Sẵn sàng 
             </AppText>
           </View>
         </View>

@@ -20,20 +20,62 @@ interface ChatMessageBubbleProps {
 }
 
 /**
- * Tự động phát hiện nếu nội dung tin nhắn AI chứa cấu trúc lịch trình
+ * Tự động phát hiện nếu nội dung tin nhắn AI chứa cấu trúc lịch trình ĐẦY ĐỦ
+ * Chỉ xuất hiện khi có đầy đủ ngày, địa điểm, phân bổ thời gian và KHÔNG PHẢI câu hỏi thăm dò
  */
 const detectItinerary = (text: string): boolean => {
   const lower = text.toLowerCase();
-  const hasDayKeywords =
-    lower.includes('ngày 1') ||
-    lower.includes('ngày 2') ||
-    lower.includes('day 1') ||
-    lower.includes('lịch trình') ||
-    lower.includes('buổi sáng') ||
-    lower.includes('buổi chiều');
 
-  const hasLength = text.length > 80;
-  return hasDayKeywords && hasLength;
+  // 1. Nếu là câu hỏi thăm dò / hỏi thêm thông tin người dùng -> KHÔNG PHẢI lịch trình
+  const isQuestioning =
+    lower.includes('bạn có thể chia sẻ') ||
+    lower.includes('cho mình biết thêm') ||
+    lower.includes('cho mình hỏi') ||
+    lower.includes('bao nhiêu không nhỉ') ||
+    lower.includes('khoảng bao nhiêu') ||
+    lower.includes('dự định đi khi nào') ||
+    lower.includes('ngân sách của bạn') ||
+    (lower.includes('ngân sách') && lower.includes('?')) ||
+    (lower.includes('thời gian') && lower.includes('?')) ||
+    (lower.includes('bao nhiêu') && lower.includes('?'));
+
+  if (isQuestioning) {
+    return false;
+  }
+
+  // 2. Bắt buộc phải có cấu trúc phân ngày (Ngày 1 / Day 1)
+  const hasDay1 = lower.includes('ngày 1') || lower.includes('day 1');
+  const hasMultipleDays =
+    lower.includes('ngày 2') ||
+    lower.includes('day 2') ||
+    lower.includes('ngày 3') ||
+    lower.includes('ngày cuối') ||
+    lower.includes('ngày tiếp theo');
+
+  // 3. Phải có phân bổ thời gian trong ngày (Sáng, Trưa, Chiều, Tối...)
+  const hasTimeSlots =
+    (lower.includes('sáng') || lower.includes('buổi sáng')) &&
+    (lower.includes('chiều') || lower.includes('tối') || lower.includes('buổi trưa'));
+
+  // 4. Phải có độ dài chi tiết của một lịch trình (>= 220 ký tự)
+  const hasSubstantialLength = text.length >= 220;
+
+  // 5. Phải có các từ khóa hành động/điểm đến du lịch
+  const hasActivityKeywords =
+    lower.includes('khách sạn') ||
+    lower.includes('check-in') ||
+    lower.includes('tham quan') ||
+    lower.includes('thưởng thức') ||
+    lower.includes('khám phá') ||
+    lower.includes('di chuyển') ||
+    lower.includes('chi phí');
+
+  return (
+    hasDay1 &&
+    (hasMultipleDays || hasTimeSlots) &&
+    hasActivityKeywords &&
+    hasSubstantialLength
+  );
 };
 
 export const ChatMessageBubble: React.FC<ChatMessageBubbleProps> = ({
@@ -118,7 +160,7 @@ export const ChatMessageBubble: React.FC<ChatMessageBubbleProps> = ({
           </View>
         </View>
 
-        {/* Action Card lưu lịch trình nếu AI phản hồi lịch trình */}
+        {/* Action Card lưu lịch trình: CHỈ HIỂN THỊ KHI ĐÃ CÓ LỊCH TRÌNH CHI TIẾT */}
         {isItinerary && onSaveItinerary && (
           <View style={styles.actionCard}>
             <View style={styles.actionHeader}>
@@ -164,9 +206,8 @@ export const ChatMessageBubble: React.FC<ChatMessageBubbleProps> = ({
 const styles = StyleSheet.create({
   userContainer: {
     alignSelf: 'flex-end',
-    maxWidth: '82%',
+    maxWidth: '85%',
     marginVertical: spacing.xs,
-    paddingHorizontal: spacing.md,
   },
   userBubble: {
     backgroundColor: colors.primary.main,
@@ -210,9 +251,8 @@ const styles = StyleSheet.create({
   aiContainer: {
     flexDirection: 'row',
     alignSelf: 'flex-start',
-    maxWidth: '92%',
+    maxWidth: '96%',
     marginVertical: spacing.xs,
-    paddingHorizontal: spacing.md,
   },
   aiAvatar: {
     width: 32,

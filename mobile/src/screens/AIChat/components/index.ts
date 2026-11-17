@@ -6,4 +6,4 @@ export * from './QuickPrompts';
 export * from './ClearChatModal';
 export * from './PlanPreviewModal';
 export * from './FormattedAIMessage';
-
+export * from './GeminiWelcomeView';

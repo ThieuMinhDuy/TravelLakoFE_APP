@@ -62,11 +62,11 @@ export const API_URLS = {
 
   // Gemini AI (/api/ai)
   AI: {
-    CHAT: '/api/ai/chat',
-    SUGGEST: '/api/ai/suggest',
-    OPTIMIZE: (tripId: string) => `/api/ai/optimize/${tripId}`,
-    GENERATE_PLAN: '/api/ai/generate-plan',
-    PARSE_ITINERARY: '/api/ai/parse-itinerary',
-    OPTIMIZE_ROUTE: '/api/ai/optimize-route',
+    CHAT: '/ai/chat',
+    SUGGEST: '/ai/suggest',
+    OPTIMIZE: (tripId: string) => `/ai/optimize/${tripId}`,
+    GENERATE_PLAN: '/ai/generate-plan',
+    PARSE_ITINERARY: '/ai/parse-itinerary',
+    OPTIMIZE_ROUTE: '/ai/optimize-route',
   },
 } as const;
