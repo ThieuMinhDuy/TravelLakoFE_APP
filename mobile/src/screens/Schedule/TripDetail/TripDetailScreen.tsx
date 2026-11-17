@@ -11,7 +11,11 @@ import {
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faPlus } from '@fortawesome/free-solid-svg-icons';
+import {
+  faPlus,
+  faRoute,
+  faBookOpen,
+} from '@fortawesome/free-solid-svg-icons';
 import { ScreenWrapper, AppText, EmptyState } from '@components/common';
 import { colors, spacing, radius, shadows } from '@theme';
 import { QUERY_KEYS } from '@constants/queryKeys';
@@ -23,7 +27,10 @@ import {
   PlaceTimelineItem,
   AddPlaceModal,
   AIOptimizeModal,
+  TripDiarySection,
 } from './components';
+
+export type DetailViewMode = 'schedule' | 'diary';
 
 export const TripDetailScreen: React.FC = () => {
   const route = useRoute<any>();
@@ -32,6 +39,7 @@ export const TripDetailScreen: React.FC = () => {
 
   const { tripId } = route.params || {};
 
+  const [viewMode, setViewMode] = useState<DetailViewMode>('schedule');
   const [activeDay, setActiveDay] = useState(1);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isOptimizeModalOpen, setIsOptimizeModalOpen] = useState(false);
@@ -164,7 +172,56 @@ export const TripDetailScreen: React.FC = () => {
             onOpenAIOptimize={() => setIsOptimizeModalOpen(true)}
             isDeleting={isDeletingTrip}
           />
-          {schedule.length > 0 && (
+
+          {/* Segmented Tab Switcher: Lịch trình vs Nhật ký */}
+          <View style={styles.viewModeSwitcher}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setViewMode('schedule')}
+              style={[
+                styles.switchBtn,
+                viewMode === 'schedule' && styles.switchBtnActive,
+              ]}
+            >
+              <FontAwesomeIcon
+                icon={faRoute}
+                size={14}
+                color={viewMode === 'schedule' ? colors.primary.main : colors.text.muted}
+                style={styles.switchIcon}
+              />
+              <AppText
+                variant={viewMode === 'schedule' ? 'captionMedium' : 'caption'}
+                color={viewMode === 'schedule' ? 'primary' : 'muted'}
+              >
+                Lịch Trình Chi Tiết
+              </AppText>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setViewMode('diary')}
+              style={[
+                styles.switchBtn,
+                viewMode === 'diary' && styles.switchBtnActive,
+              ]}
+            >
+              <FontAwesomeIcon
+                icon={faBookOpen}
+                size={14}
+                color={viewMode === 'diary' ? colors.primary.main : colors.text.muted}
+                style={styles.switchIcon}
+              />
+              <AppText
+                variant={viewMode === 'diary' ? 'captionMedium' : 'caption'}
+                color={viewMode === 'diary' ? 'primary' : 'muted'}
+              >
+                Nhật Ký & Kỷ Niệm
+              </AppText>
+            </TouchableOpacity>
+          </View>
+
+          {/* Day Selector (chỉ hiện khi xem tab Lịch trình) */}
+          {viewMode === 'schedule' && schedule.length > 0 && (
             <DaySelector
               schedule={schedule}
               activeDay={activeDay}
@@ -190,41 +247,53 @@ export const TripDetailScreen: React.FC = () => {
           />
         }
       >
-        {places.length === 0 ? (
-          <EmptyState
-            title={`Ngày ${activeDay} chưa có địa điểm`}
-            description="Hãy thêm các điểm tham quan, khách sạn hoặc quán ăn để hoàn thiện lịch trình khám phá của bạn!"
-            actionTitle="Thêm địa điểm ngay"
-            onAction={() => setIsAddModalOpen(true)}
-            style={styles.emptyContainer}
-          />
+        {viewMode === 'schedule' ? (
+          /* TAB 1: LỊCH TRÌNH THEO NGÀY */
+          places.length === 0 ? (
+            <EmptyState
+              title={`Ngày ${activeDay} chưa có địa điểm`}
+              description="Hãy thêm các điểm tham quan, khách sạn hoặc quán ăn để hoàn thiện lịch trình khám phá của bạn!"
+              actionTitle="Thêm địa điểm ngay"
+              onAction={() => setIsAddModalOpen(true)}
+              style={styles.emptyContainer}
+            />
+          ) : (
+            <View style={styles.timelineList}>
+              {places.map((place, index) => (
+                <PlaceTimelineItem
+                  key={place._id || index}
+                  tripId={tripId}
+                  place={place}
+                  index={index}
+                  totalPlaces={places.length}
+                  onMoveUp={() => handleReorder(index, index - 1)}
+                  onMoveDown={() => handleReorder(index, index + 1)}
+                  onDelete={() => handleDeletePlace(place._id)}
+                  onCheckInSuccess={() => refetch()}
+                />
+              ))}
+            </View>
+          )
         ) : (
-          <View style={styles.timelineList}>
-            {places.map((place, index) => (
-              <PlaceTimelineItem
-                key={place._id || index}
-                tripId={tripId}
-                place={place}
-                index={index}
-                totalPlaces={places.length}
-                onMoveUp={() => handleReorder(index, index - 1)}
-                onMoveDown={() => handleReorder(index, index + 1)}
-                onDelete={() => handleDeletePlace(place._id)}
-                onCheckInSuccess={() => refetch()}
-              />
-            ))}
-          </View>
+          /* TAB 2: NHẬT KÝ & ẢNH KỶ NIỆM */
+          <TripDiarySection
+            tripId={tripId}
+            diary={trip.diary}
+            onDiaryUpdated={() => refetch()}
+          />
         )}
       </ScrollView>
 
-      {/* FAB Thêm địa điểm */}
-      <TouchableOpacity
-        activeOpacity={0.85}
-        onPress={() => setIsAddModalOpen(true)}
-        style={styles.fab}
-      >
-        <FontAwesomeIcon icon={faPlus} size={20} color={colors.text.inverse} />
-      </TouchableOpacity>
+      {/* FAB Thêm địa điểm (chỉ hiện khi ở tab Lịch trình) */}
+      {viewMode === 'schedule' && (
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => setIsAddModalOpen(true)}
+          style={styles.fab}
+        >
+          <FontAwesomeIcon icon={faPlus} size={20} color={colors.text.inverse} />
+        </TouchableOpacity>
+      )}
 
       {/* Modal Thêm Địa Điểm */}
       <AddPlaceModal
@@ -259,6 +328,32 @@ const styles = StyleSheet.create({
   },
   loaderText: {
     marginTop: spacing.sm,
+  },
+  viewModeSwitcher: {
+    flexDirection: 'row',
+    backgroundColor: colors.background.surface,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.subtle,
+    gap: spacing.sm,
+  },
+  switchBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.xs + 2,
+    borderRadius: radius.pill,
+    backgroundColor: colors.background.subtle,
+  },
+  switchBtnActive: {
+    backgroundColor: colors.primary.soft,
+    borderWidth: 1,
+    borderColor: colors.primary.border,
+  },
+  switchIcon: {
+    marginRight: spacing.xs,
   },
   scrollContent: {
     padding: spacing.md,
