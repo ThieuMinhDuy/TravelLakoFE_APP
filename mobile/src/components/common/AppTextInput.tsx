@@ -3,6 +3,7 @@ import {
   View,
   TextInput,
   TextInputProps,
+  TouchableOpacity,
   StyleSheet,
   ViewStyle,
 } from 'react-native';
@@ -15,6 +16,7 @@ export interface AppTextInputProps extends TextInputProps {
   helperText?: string;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
+  isPassword?: boolean;
   containerStyle?: ViewStyle;
 }
 
@@ -24,6 +26,8 @@ export const AppTextInput: React.FC<AppTextInputProps> = ({
   helperText,
   leftIcon,
   rightIcon,
+  isPassword = false,
+  secureTextEntry,
   containerStyle,
   style,
   onFocus,
@@ -32,6 +36,7 @@ export const AppTextInput: React.FC<AppTextInputProps> = ({
   ...rest
 }) => {
   const [isFocused, setIsFocused] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleFocus = (e: any) => {
     setIsFocused(true);
@@ -49,6 +54,8 @@ export const AppTextInput: React.FC<AppTextInputProps> = ({
     if (isFocused) return colors.border.focused;
     return colors.border.subtle;
   };
+
+  const effectiveSecureTextEntry = isPassword ? !showPassword : secureTextEntry;
 
   return (
     <View style={[styles.container, containerStyle]}>
@@ -73,12 +80,26 @@ export const AppTextInput: React.FC<AppTextInputProps> = ({
           style={[styles.input, style]}
           placeholderTextColor={colors.text.muted}
           editable={editable}
+          secureTextEntry={effectiveSecureTextEntry}
           onFocus={handleFocus}
           onBlur={handleBlur}
           {...rest}
         />
 
-        {rightIcon && <View style={styles.rightIconContainer}>{rightIcon}</View>}
+        {isPassword ? (
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => setShowPassword((prev) => !prev)}
+            style={styles.eyeToggle}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <AppText variant="caption" color={showPassword ? 'primary' : 'muted'}>
+              {showPassword ? 'Ẩn' : 'Hiện'}
+            </AppText>
+          </TouchableOpacity>
+        ) : (
+          rightIcon && <View style={styles.rightIconContainer}>{rightIcon}</View>
+        )}
       </View>
 
       {error ? (
@@ -107,7 +128,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.2,
     borderRadius: radius.lg,
     paddingHorizontal: spacing.md,
-    minHeight: 48,
+    minHeight: 50,
   },
   input: {
     flex: 1,
@@ -121,9 +142,12 @@ const styles = StyleSheet.create({
   rightIconContainer: {
     marginLeft: spacing.sm,
   },
+  eyeToggle: {
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xxs,
+  },
   message: {
     marginTop: spacing.xxs + 2,
     marginLeft: spacing.xs,
   },
 });
-
