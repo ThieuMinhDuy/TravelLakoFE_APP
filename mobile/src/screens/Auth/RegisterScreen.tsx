@@ -1,3 +1,4 @@
+import { AuthBrand } from '@components/common/AuthBrand';
 import React, { useState } from 'react';
 import {
   View,
@@ -11,20 +12,19 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText, AppTextInput } from '@components/common';
-import { colors, spacing, radius } from '@theme';
+import { spacing, radius } from '@theme';
 import { SCREEN_NAMES } from '@constants/screenNames';
 import { authService } from '@services/auth.service';
-import { useAppNavigation } from '@hooks/useAppNavigation';
+import { useAuthNavigation } from '@hooks/useAuthNavigation';
 
 export const RegisterScreen: React.FC = () => {
-  const navigation = useAppNavigation();
+  const navigation = useAuthNavigation();
   const insets = useSafeAreaInsets();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [agreeTerms, setAgreeTerms] = useState(true);
 
   const [isLoading, setIsLoading] = useState(false);
   const [nameError, setNameError] = useState('');
@@ -42,37 +42,32 @@ export const RegisterScreen: React.FC = () => {
     setErrorMessage('');
 
     if (!name.trim()) {
-      setNameError('Please enter your full name');
+      setNameError('Vui lòng nhập họ và tên.');
       isValid = false;
     }
 
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
-      setEmailError('Please enter your email');
+      setEmailError('Vui lòng nhập email.');
       isValid = false;
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      setEmailError('Invalid email format (e.g. user@gmail.com)');
+    } else if (!/^[^\s@]+@gmail\.com$/i.test(trimmedEmail)) {
+      setEmailError('Vui lòng sử dụng địa chỉ email @gmail.com.');
       isValid = false;
     }
 
     if (!password) {
-      setPasswordError('Please enter a password');
+      setPasswordError('Vui lòng nhập mật khẩu.');
       isValid = false;
     } else if (password.length < 6) {
-      setPasswordError('Password must be at least 6 characters');
+      setPasswordError('Mật khẩu phải có ít nhất 6 ký tự.');
       isValid = false;
     } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
-      setPasswordError('Must contain uppercase, lowercase letter, and number');
+      setPasswordError('Mật khẩu phải có chữ hoa, chữ thường và số.');
       isValid = false;
     }
 
     if (password !== confirmPassword) {
-      setConfirmPasswordError('Passwords do not match');
-      isValid = false;
-    }
-
-    if (!agreeTerms) {
-      setErrorMessage('You must agree to the Terms & Privacy Policy to continue');
+      setConfirmPasswordError('Mật khẩu xác nhận không khớp.');
       isValid = false;
     }
 
@@ -93,17 +88,25 @@ export const RegisterScreen: React.FC = () => {
       });
 
       // Navigate to OTP verification screen
-      navigation.navigate(SCREEN_NAMES.VERIFY_OTP as any, { email: email.trim() });
+      navigation.navigate(SCREEN_NAMES.VERIFY_OTP, { email: email.trim() });
     } catch (err: any) {
       console.warn('[RegisterScreen] Error:', err);
-      setErrorMessage(err.message || 'Registration failed. Please try again.');
+      setErrorMessage(err.message || 'Đăng ký thất bại. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <View style={[styles.root, { paddingTop: Math.max(insets.top, 12), paddingBottom: Math.max(insets.bottom, 16) }]}>
+    <View
+      style={[
+        styles.root,
+        {
+          paddingTop: Math.max(insets.top, 12),
+          paddingBottom: Math.max(insets.bottom, 16),
+        },
+      ]}
+    >
       <StatusBar barStyle="dark-content" />
 
       {/* Top Header with Circular Back Button */}
@@ -128,10 +131,12 @@ export const RegisterScreen: React.FC = () => {
           showsVerticalScrollIndicator={false}
         >
           {/* Header Typography */}
+          <AuthBrand />
           <View style={styles.headerSection}>
-            <AppText style={styles.title}>Create Account ✨</AppText>
+            <AppText style={styles.title}>Tạo tài khoản</AppText>
             <AppText style={styles.subtitle}>
-              Sign up now and start planning unforgettable journeys with TravelLako.
+              Đăng ký để bắt đầu lên kế hoạch cho những chuyến đi cùng
+              TravelLako.
             </AppText>
           </View>
 
@@ -145,11 +150,11 @@ export const RegisterScreen: React.FC = () => {
           {/* Form Fields */}
           <View style={styles.formSection}>
             <AppTextInput
-              label="Full Name"
-              placeholder="e.g. Alex Johnson"
+              label="Họ và tên"
+              placeholder="Nhập họ và tên"
               autoCapitalize="words"
               value={name}
-              onChangeText={(val) => {
+              onChangeText={val => {
                 setName(val);
                 if (nameError) setNameError('');
               }}
@@ -158,13 +163,13 @@ export const RegisterScreen: React.FC = () => {
             />
 
             <AppTextInput
-              label="Email Address"
-              placeholder="e.g. alex@gmail.com"
+              label="Địa chỉ email"
+              placeholder="Ví dụ: ban@gmail.com"
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
               value={email}
-              onChangeText={(val) => {
+              onChangeText={val => {
                 setEmail(val);
                 if (emailError) setEmailError('');
               }}
@@ -173,11 +178,12 @@ export const RegisterScreen: React.FC = () => {
             />
 
             <AppTextInput
-              label="Password"
-              placeholder="Min 6 characters (1 upper, 1 lower, 1 digit)"
+              label="Mật khẩu"
+              placeholder="Nhập mật khẩu"
+              helperText="Ít nhất 6 ký tự, có chữ hoa, chữ thường và số"
               isPassword
               value={password}
-              onChangeText={(val) => {
+              onChangeText={val => {
                 setPassword(val);
                 if (passwordError) setPasswordError('');
               }}
@@ -186,33 +192,17 @@ export const RegisterScreen: React.FC = () => {
             />
 
             <AppTextInput
-              label="Confirm Password"
-              placeholder="Re-enter your password"
+              label="Xác nhận mật khẩu"
+              placeholder="Nhập lại mật khẩu"
               isPassword
               value={confirmPassword}
-              onChangeText={(val) => {
+              onChangeText={val => {
                 setConfirmPassword(val);
                 if (confirmPasswordError) setConfirmPasswordError('');
               }}
               error={confirmPasswordError}
               containerStyle={styles.inputSpacing}
             />
-
-            {/* Terms of Service Checkbox */}
-            <TouchableOpacity
-              activeOpacity={0.8}
-              style={styles.termsRow}
-              onPress={() => setAgreeTerms((prev) => !prev)}
-            >
-              <View style={[styles.checkbox, agreeTerms && styles.checkboxActive]}>
-                {agreeTerms && <AppText style={styles.checkmark}>✓</AppText>}
-              </View>
-              <AppText style={styles.termsText}>
-                I agree to the{' '}
-                <AppText style={styles.termsHighlight}>Terms of Service</AppText> and{' '}
-                <AppText style={styles.termsHighlight}>Privacy Policy</AppText>
-              </AppText>
-            </TouchableOpacity>
 
             {/* Submit Pill Button */}
             <TouchableOpacity
@@ -224,19 +214,19 @@ export const RegisterScreen: React.FC = () => {
               {isLoading ? (
                 <ActivityIndicator color="#FFFFFF" size="small" />
               ) : (
-                <AppText style={styles.registerBtnText}>Sign Up & Get OTP</AppText>
+                <AppText style={styles.registerBtnText}>Đăng ký</AppText>
               )}
             </TouchableOpacity>
           </View>
 
           {/* Footer Prompt */}
           <View style={styles.footerRow}>
-            <AppText style={styles.footerPromptText}>Already have an account? </AppText>
+            <AppText style={styles.footerPromptText}>Đã có tài khoản? </AppText>
             <TouchableOpacity
               activeOpacity={0.7}
-              onPress={() => navigation.navigate(SCREEN_NAMES.LOGIN as any)}
+              onPress={() => navigation.navigate(SCREEN_NAMES.LOGIN)}
             >
-              <AppText style={styles.footerLinkText}>Log in</AppText>
+              <AppText style={styles.footerLinkText}>Đăng nhập</AppText>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -264,9 +254,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -277,7 +265,7 @@ const styles = StyleSheet.create({
     marginTop: -2,
   },
   scrollContent: {
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: 36,
     paddingTop: spacing.sm,
     paddingBottom: spacing.xxl,
   },
@@ -286,8 +274,8 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '800',
+    fontSize: 24,
+    fontWeight: '500',
     color: '#0F172A',
     letterSpacing: -0.5,
   },
@@ -317,55 +305,14 @@ const styles = StyleSheet.create({
   inputSpacing: {
     marginBottom: spacing.md,
   },
-  termsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: spacing.xs,
-    marginBottom: spacing.xl,
-    paddingRight: spacing.md,
-  },
-  checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 7,
-    borderWidth: 1.5,
-    borderColor: '#CBD5E1',
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.sm,
-  },
-  checkboxActive: {
-    backgroundColor: '#2563EB',
-    borderColor: '#2563EB',
-  },
-  checkmark: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: 'bold',
-  },
-  termsText: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: '#64748B',
-    flex: 1,
-  },
-  termsHighlight: {
-    color: '#2563EB',
-    fontWeight: '600',
-  },
   registerBtn: {
-    width: '100%',
-    height: 52,
+    width: 156,
+    alignSelf: 'center',
+    height: 48,
     borderRadius: 9999,
-    backgroundColor: '#2563EB',
+    backgroundColor: '#2F5ABD',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#2563EB',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 3,
     marginBottom: spacing.lg,
   },
   btnDisabled: {
@@ -389,6 +336,6 @@ const styles = StyleSheet.create({
   footerLinkText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#2563EB',
+    color: '#2F5ABD',
   },
 });

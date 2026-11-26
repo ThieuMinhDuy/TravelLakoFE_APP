@@ -8,6 +8,10 @@ export interface User {
   name: string;
   email: string;
   avatar: string;
+  coverImage?: string;
+  authType?: string;
+  hasPassword?: boolean;
+  stats?: { trips: number; favorites: number; reviews: number };
   phone: string;
   gender: 'Nam' | 'Nữ' | 'Khác' | '';
   dateOfBirth: string | null;
@@ -44,11 +48,10 @@ export interface VerifyOtpPayload {
 export interface UpdateProfilePayload {
   name?: string;
   avatar?: string;
+  coverImage?: string;
   phone?: string;
   gender?: 'Nam' | 'Nữ' | 'Khác' | '';
   dateOfBirth?: string;
   travelPreferences?: string[];
   favoriteBudget?: 'Tiết kiệm' | 'Trung bình' | 'Cao cấp' | '';
-  password?: string;
 }
-

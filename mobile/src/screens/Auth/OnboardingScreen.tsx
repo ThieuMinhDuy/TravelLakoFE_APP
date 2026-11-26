@@ -10,26 +10,26 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '@components/common';
-import { colors, spacing, radius } from '@theme';
+import { spacing } from '@theme';
 import { IMAGES } from '../../assets';
 import { SCREEN_NAMES } from '@constants/screenNames';
-import { useAppNavigation } from '@hooks/useAppNavigation';
+import { useAuthNavigation } from '@hooks/useAuthNavigation';
 
 export const OnboardingScreen: React.FC = () => {
-  const navigation = useAppNavigation();
+  const navigation = useAuthNavigation();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
 
   const handleSkip = () => {
-    navigation.navigate(SCREEN_NAMES.LOGIN as any);
+    navigation.navigate(SCREEN_NAMES.LOGIN);
   };
 
   const handleLogin = () => {
-    navigation.navigate(SCREEN_NAMES.LOGIN as any);
+    navigation.navigate(SCREEN_NAMES.LOGIN);
   };
 
   const handleCreateAccount = () => {
-    navigation.navigate(SCREEN_NAMES.REGISTER as any);
+    navigation.navigate(SCREEN_NAMES.REGISTER);
   };
 
   // Dynamic responsive collage sizing
@@ -38,7 +38,15 @@ export const OnboardingScreen: React.FC = () => {
   const colRightWidth = Math.floor(contentWidth * 0.52);
 
   return (
-    <View style={[styles.root, { paddingTop: Math.max(insets.top, 12), paddingBottom: Math.max(insets.bottom, 16) }]}>
+    <View
+      style={[
+        styles.root,
+        {
+          paddingTop: Math.max(insets.top, 12),
+          paddingBottom: Math.max(insets.bottom, 16),
+        },
+      ]}
+    >
       <StatusBar barStyle="dark-content" />
 
       {/* Top Header: Skip Button */}
@@ -50,7 +58,7 @@ export const OnboardingScreen: React.FC = () => {
           style={styles.skipButton}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         >
-          <AppText style={styles.skipText}>Skip</AppText>
+          <AppText style={styles.skipText}>Bỏ qua</AppText>
         </TouchableOpacity>
       </View>
 
@@ -63,7 +71,9 @@ export const OnboardingScreen: React.FC = () => {
         <View style={[styles.collageContainer, { width: contentWidth }]}>
           <View style={styles.collageTopRow}>
             {/* Top-Left Image: Traveler with backpack looking out */}
-            <View style={[styles.imageCard, { width: colLeftWidth, height: 210 }]}>
+            <View
+              style={[styles.imageCard, { width: colLeftWidth, height: 210 }]}
+            >
               <Image
                 source={IMAGES.scenic1}
                 style={styles.fullImage}
@@ -72,7 +82,12 @@ export const OnboardingScreen: React.FC = () => {
             </View>
 
             {/* Top-Right Image: Scenic Island Lake */}
-            <View style={[styles.imageCard, { width: colRightWidth, height: 185, marginTop: 14 }]}>
+            <View
+              style={[
+                styles.imageCard,
+                { width: colRightWidth, height: 185, marginTop: 14 },
+              ]}
+            >
               <Image
                 source={IMAGES.scenic2}
                 style={styles.fullImage}
@@ -82,7 +97,13 @@ export const OnboardingScreen: React.FC = () => {
           </View>
 
           {/* Bottom Center Image: Old Town Harbor Marina */}
-          <View style={[styles.imageCard, styles.bottomCollageCard, { width: contentWidth, height: 160 }]}>
+          <View
+            style={[
+              styles.imageCard,
+              styles.bottomCollageCard,
+              { width: contentWidth, height: 160 },
+            ]}
+          >
             <Image
               source={IMAGES.scenic3}
               style={styles.fullImage}
@@ -93,26 +114,19 @@ export const OnboardingScreen: React.FC = () => {
 
         {/* Headline Section */}
         <View style={styles.headlineContainer}>
-          <AppText style={styles.titleLine}>Discover</AppText>
-          <AppText style={styles.titleLine}>Amazing</AppText>
+          <AppText style={styles.titleLine}>Khám phá</AppText>
+          <AppText style={styles.titleLine}>những điểm đến</AppText>
 
           {/* Amber Highlight Ribbon for 'Destinations' */}
           <View style={styles.ribbonRow}>
             <View style={styles.ribbon}>
-              <AppText style={styles.ribbonText}>Destinations</AppText>
+              <AppText style={styles.ribbonText}>tuyệt vời</AppText>
             </View>
           </View>
 
           <AppText style={styles.subtitle}>
-            We believe traveling around the world shouldn't be hard.
+            Khám phá thế giới và lên kế hoạch chuyến đi dễ dàng cùng TravelLako.
           </AppText>
-        </View>
-
-        {/* Modern Dot Pagination Indicator */}
-        <View style={styles.paginationRow}>
-          <View style={styles.dotActive} />
-          <View style={styles.dotInactive} />
-          <View style={styles.dotInactiveLight} />
         </View>
 
         {/* Primary & Secondary Pill CTA Buttons */}
@@ -123,7 +137,7 @@ export const OnboardingScreen: React.FC = () => {
             onPress={handleLogin}
             style={styles.primaryPillBtn}
           >
-            <AppText style={styles.primaryPillText}>Log in</AppText>
+            <AppText style={styles.primaryPillText}>Đăng nhập</AppText>
           </TouchableOpacity>
 
           {/* Secondary 'Create Account' Outline Pill Button */}
@@ -132,7 +146,7 @@ export const OnboardingScreen: React.FC = () => {
             onPress={handleCreateAccount}
             style={styles.outlinePillBtn}
           >
-            <AppText style={styles.outlinePillText}>Create Account</AppText>
+            <AppText style={styles.outlinePillText}>Đăng ký</AppText>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -231,34 +245,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     maxWidth: '92%',
   },
-  paginationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingHorizontal: spacing.xl,
-    marginTop: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  dotActive: {
-    width: 26,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: '#2563EB',
-    marginRight: 6,
-  },
-  dotInactive: {
-    width: 14,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: '#93C5FD',
-    marginRight: 6,
-  },
-  dotInactiveLight: {
-    width: 14,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: '#DBEAFE',
-  },
   actionsContainer: {
     width: '100%',
     paddingHorizontal: spacing.xl,
@@ -298,4 +284,3 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-

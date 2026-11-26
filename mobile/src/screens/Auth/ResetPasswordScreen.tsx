@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import { isOtp } from '@utils/authValidation';
+import { AuthBrand } from '@components/common/AuthBrand';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -8,13 +10,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText, AppTextInput } from '@components/common';
-import { colors, spacing, radius } from '@theme';
+import { spacing, radius } from '@theme';
 import { SCREEN_NAMES } from '@constants/screenNames';
 import { authService } from '@services/auth.service';
-import { useAppNavigation } from '@hooks/useAppNavigation';
+import { useAuthNavigation } from '@hooks/useAuthNavigation';
 
 export interface ResetPasswordScreenProps {
   route: {
@@ -24,11 +27,42 @@ export interface ResetPasswordScreenProps {
   };
 }
 
-export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ route }) => {
+export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({
+  route,
+}) => {
   const email = route?.params?.email || '';
-  const navigation = useAppNavigation();
+  const navigation = useAuthNavigation();
   const insets = useSafeAreaInsets();
 
+  const [deadline, setDeadline] = useState(Date.now() + 300000);
+  const [resendAt, setResendAt] = useState(Date.now() + 60000);
+  const [seconds, setSeconds] = useState(300);
+  const [cooldown, setCooldown] = useState(60);
+  const [resending, setResending] = useState(false);
+  useEffect(() => {
+    const tick = () => {
+      setSeconds(Math.max(0, Math.ceil((deadline - Date.now()) / 1000)));
+      setCooldown(Math.max(0, Math.ceil((resendAt - Date.now()) / 1000)));
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [deadline, resendAt]);
+  const resend = async () => {
+    if (cooldown || resending || isLoading) return;
+    try {
+      setResending(true);
+      setErrorMessage('');
+      await authService.forgotPassword(email);
+      setOtp('');
+      setDeadline(Date.now() + 300000);
+      setResendAt(Date.now() + 60000);
+    } catch (error) {
+      setErrorMessage((error as Error).message);
+    } finally {
+      setResending(false);
+    }
+  };
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -46,24 +80,24 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ route 
     setConfirmPasswordError('');
     setErrorMessage('');
 
-    if (!otp.trim()) {
-      setOtpError('Please enter the reset code');
+    if (!isOtp(otp.trim())) {
+      setOtpError('Vui lòng nhập mã xác thực gồm 6 chữ số.');
       isValid = false;
     }
 
     if (!newPassword) {
-      setNewPasswordError('Please enter your new password');
+      setNewPasswordError('Vui lòng nhập mật khẩu mới.');
       isValid = false;
     } else if (newPassword.length < 6) {
-      setNewPasswordError('Password must be at least 6 characters');
+      setNewPasswordError('Mật khẩu phải có ít nhất 6 ký tự.');
       isValid = false;
     } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(newPassword)) {
-      setNewPasswordError('Must contain uppercase, lowercase letter, and number');
+      setNewPasswordError('Mật khẩu phải có chữ hoa, chữ thường và số.');
       isValid = false;
     }
 
     if (newPassword !== confirmPassword) {
-      setConfirmPasswordError('Passwords do not match');
+      setConfirmPasswordError('Mật khẩu xác nhận không khớp.');
       isValid = false;
     }
 
@@ -71,6 +105,11 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ route 
   };
 
   const handleReset = async () => {
+    if (isLoading || resending) return;
+    if (!seconds) {
+      setErrorMessage('Mã đã hết hạn. Vui lòng gửi lại mã.');
+      return;
+    }
     if (!validate()) return;
 
     try {
@@ -82,17 +121,32 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ route 
         newPassword,
       });
 
+      Alert.alert(
+        'Thành công',
+        'Mật khẩu đã được đặt lại. Hãy đăng nhập bằng mật khẩu mới.',
+      );
       // Redirect to Login Screen
-      navigation.navigate(SCREEN_NAMES.LOGIN as any);
+      navigation.navigate(SCREEN_NAMES.LOGIN);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Password reset failed. Please check your code.');
+      setErrorMessage(
+        err.message ||
+          'Không thể đặt lại mật khẩu. Vui lòng kiểm tra mã xác thực.',
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <View style={[styles.root, { paddingTop: Math.max(insets.top, 12), paddingBottom: Math.max(insets.bottom, 16) }]}>
+    <View
+      style={[
+        styles.root,
+        {
+          paddingTop: Math.max(insets.top, 12),
+          paddingBottom: Math.max(insets.bottom, 16),
+        },
+      ]}
+    >
       <StatusBar barStyle="dark-content" />
 
       {/* Top Header with Circular Back Button */}
@@ -116,11 +170,13 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ route 
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
+          <AuthBrand />
           <View style={styles.headerSection}>
-            <AppText style={styles.title}>Reset Password 🔒</AppText>
+            <AppText style={styles.title}>Đặt lại mật khẩu</AppText>
             <AppText style={styles.subtitle}>
-              Enter the reset code sent to{' '}
-              <AppText style={styles.emailHighlight}>{email}</AppText> and choose a new password.
+              Nhập mã xác thực đã gửi đến{' '}
+              <AppText style={styles.emailHighlight}>{email}</AppText> và tạo
+              mật khẩu mới.
             </AppText>
           </View>
 
@@ -130,14 +186,31 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ route 
             </View>
           ) : null}
 
+          <AppText>
+            Mã hết hạn sau {Math.floor(seconds / 60)}:
+            {String(seconds % 60).padStart(2, '0')}
+          </AppText>
+          <TouchableOpacity
+            disabled={!!cooldown || resending || isLoading}
+            onPress={resend}
+          >
+            <AppText color="primary">
+              {resending
+                ? 'Đang gửi...'
+                : cooldown
+                ? `Gửi lại sau ${cooldown} giây`
+                : 'Gửi lại mã'}
+            </AppText>
+          </TouchableOpacity>
           <View style={styles.formSection}>
             <AppTextInput
-              label="Reset Code (OTP)"
-              placeholder="e.g. 123456"
+              label="Mã xác thực (OTP)"
+              placeholder="Nhập 6 chữ số"
               keyboardType="number-pad"
+              maxLength={6}
               value={otp}
-              onChangeText={(val) => {
-                setOtp(val);
+              onChangeText={val => {
+                setOtp(val.replace(/\D/g, ''));
                 if (otpError) setOtpError('');
               }}
               error={otpError}
@@ -145,11 +218,12 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ route 
             />
 
             <AppTextInput
-              label="New Password"
-              placeholder="Min 6 characters (1 upper, 1 lower, 1 digit)"
+              label="Mật khẩu mới"
+              placeholder="Nhập mật khẩu mới"
+              helperText="Ít nhất 6 ký tự, có chữ hoa, chữ thường và số"
               isPassword
               value={newPassword}
-              onChangeText={(val) => {
+              onChangeText={val => {
                 setNewPassword(val);
                 if (newPasswordError) setNewPasswordError('');
               }}
@@ -158,11 +232,11 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ route 
             />
 
             <AppTextInput
-              label="Confirm New Password"
-              placeholder="Re-enter new password"
+              label="Xác nhận mật khẩu mới"
+              placeholder="Nhập lại mật khẩu mới"
               isPassword
               value={confirmPassword}
-              onChangeText={(val) => {
+              onChangeText={val => {
                 setConfirmPassword(val);
                 if (confirmPasswordError) setConfirmPasswordError('');
               }}
@@ -173,13 +247,13 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ route 
             <TouchableOpacity
               activeOpacity={0.85}
               onPress={handleReset}
-              disabled={isLoading}
+              disabled={isLoading || resending}
               style={[styles.submitBtn, isLoading && styles.btnDisabled]}
             >
               {isLoading ? (
                 <ActivityIndicator color="#FFFFFF" size="small" />
               ) : (
-                <AppText style={styles.submitBtnText}>Save New Password</AppText>
+                <AppText style={styles.submitBtnText}>Lưu mật khẩu</AppText>
               )}
             </TouchableOpacity>
           </View>
@@ -208,9 +282,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -221,7 +293,7 @@ const styles = StyleSheet.create({
     marginTop: -2,
   },
   scrollContent: {
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: 36,
     paddingTop: spacing.sm,
     paddingBottom: spacing.xxl,
   },
@@ -230,8 +302,8 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '800',
+    fontSize: 24,
+    fontWeight: '500',
     color: '#0F172A',
     letterSpacing: -0.5,
   },
@@ -266,17 +338,13 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   submitBtn: {
-    width: '100%',
-    height: 52,
+    width: 156,
+    alignSelf: 'center',
+    height: 48,
     borderRadius: 9999,
-    backgroundColor: '#2563EB',
+    backgroundColor: '#2F5ABD',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#2563EB',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 3,
     marginTop: spacing.sm,
   },
   btnDisabled: {
@@ -288,4 +356,3 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-

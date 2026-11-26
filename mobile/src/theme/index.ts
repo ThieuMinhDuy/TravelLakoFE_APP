@@ -7,60 +7,60 @@ import type { TextStyle, ViewStyle } from 'react-native';
 export const colors = {
   // Brand & Primary (Ocean Azure - Biển trời dịu mắt)
   primary: {
-    main: '#0369A1',       // Sky-700: Màu thương hiệu chính, nút CTA, active state
-    dark: '#075985',       // Sky-800: Trạng thái hover / pressed
-    light: '#0284C7',      // Sky-600: Nhấn nhẹ
-    soft: '#F0F9FF',       // Sky-50: Nền thẻ active, highlight
-    border: '#BAE6FD',     // Sky-200: Viền thẻ active
+    main: '#2F5ABD', // Sky-700: Màu thương hiệu chính, nút CTA, active state
+    dark: '#075985', // Sky-800: Trạng thái hover / pressed
+    light: '#0284C7', // Sky-600: Nhấn nhẹ
+    soft: '#F0F9FF', // Sky-50: Nền thẻ active, highlight
+    border: '#BAE6FD', // Sky-200: Viền thẻ active
   },
 
   // Nature & Safety (Coastal Teal - Thiên nhiên / An toàn)
   nature: {
-    main: '#0D9488',       // Teal-600: Tag địa điểm tự nhiên, check-in thành công
-    light: '#CCFBF1',      // Teal-100: Nền badge thành công / check-in
-    dark: '#0F766E',       // Teal-700
+    main: '#0D9488', // Teal-600: Tag địa điểm tự nhiên, check-in thành công
+    light: '#CCFBF1', // Teal-100: Nền badge thành công / check-in
+    dark: '#0F766E', // Teal-700
   },
 
   // Warmth & Accent (Sunset Sand - Cát biển) - Dùng hạn chế: Rating sao, Highlight chữ
   sand: {
-    main: '#D97706',       // Amber-600: Rating sao, chữ "Destinations !"
-    light: '#FEF3C7',      // Amber-100: Nền badge rating
-    dark: '#B45309',       // Amber-700
+    main: '#D97706', // Amber-600: Rating sao, chữ "Destinations !"
+    light: '#FEF3C7', // Amber-100: Nền badge rating
+    dark: '#B45309', // Amber-700
   },
 
   // Background & Surfaces (Apple & Notion Clean Style)
   background: {
-    app: '#FAFAFA',        // Off-White dịu mắt cho nền màn hình
-    surface: '#FFFFFF',    // Trắng tinh khiết cho Card, Header, Bottom Tab
-    subtle: '#F1F5F9',     // Slate-100: Nền search input, tab chưa active
-    disabled: '#E2E8F0',   // Slate-200
+    app: '#FFFFFF', // Off-White dịu mắt cho nền màn hình
+    surface: '#FFFFFF', // Trắng tinh khiết cho Card, Header, Bottom Tab
+    subtle: '#F1F5F9', // Slate-100: Nền search input, tab chưa active
+    disabled: '#E2E8F0', // Slate-200
   },
 
   // Typography Tokens
   text: {
-    main: '#0F172A',       // Slate-900: Tiêu đề chính, tên địa điểm
-    sub: '#475569',        // Slate-600: Mô tả, giá cả, thông tin phụ
-    muted: '#94A3B8',      // Slate-400: Placeholder, disabled text
-    inverse: '#FFFFFF',    // Trắng trên nền đậm
-    primary: '#0369A1',    // Xanh link hoặc text nhấn
-    sand: '#D97706',       // Vàng cam cát biển
+    main: '#0F172A', // Slate-900: Tiêu đề chính, tên địa điểm
+    sub: '#475569', // Slate-600: Mô tả, giá cả, thông tin phụ
+    muted: '#94A3B8', // Slate-400: Placeholder, disabled text
+    inverse: '#FFFFFF', // Trắng trên nền đậm
+    primary: '#2F5ABD', // Xanh link hoặc text nhấn
+    sand: '#D97706', // Vàng cam cát biển
   },
 
   // Structural & Borders
   border: {
-    subtle: '#E2E8F0',     // Viền 1px nhã nhặn cho card, divider
-    focused: '#0369A1',    // Viền khi input focus
-    error: '#EF4444',      // Viền khi input lỗi
-    active: '#0369A1',     // Viền xanh chủ đạo (như thanh search)
+    subtle: '#E2E8F0', // Viền 1px nhã nhặn cho card, divider
+    focused: '#2F5ABD', // Viền khi input focus
+    error: '#EF4444', // Viền khi input lỗi
+    active: '#2F5ABD', // Viền xanh chủ đạo (như thanh search)
   },
 
   // Semantic & Feedback Status
   status: {
-    success: '#0D9488',    // Check-in thành công
+    success: '#0D9488', // Check-in thành công
     successBg: '#CCFBF1',
-    error: '#EF4444',      // Thất bại / Báo lỗi
+    error: '#EF4444', // Thất bại / Báo lỗi
     errorBg: '#FEE2E2',
-    warning: '#D97706',    // Cảnh báo
+    warning: '#D97706', // Cảnh báo
     warningBg: '#FEF3C7',
     info: '#0284C7',
     infoBg: '#E0F2FE',

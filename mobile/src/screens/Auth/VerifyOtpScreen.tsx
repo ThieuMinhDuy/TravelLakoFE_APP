@@ -1,3 +1,4 @@
+import { AuthBrand } from '@components/common/AuthBrand';
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
@@ -12,11 +13,11 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '@components/common';
-import { colors, spacing, radius } from '@theme';
+import { spacing, radius } from '@theme';
 import { SCREEN_NAMES } from '@constants/screenNames';
 import { authService } from '@services/auth.service';
 import { useAuthStore } from '@store/useAuthStore';
-import { useAppNavigation } from '@hooks/useAppNavigation';
+import { useAuthNavigation } from '@hooks/useAuthNavigation';
 
 export interface VerifyOtpScreenProps {
   route: {
@@ -27,10 +28,13 @@ export interface VerifyOtpScreenProps {
 }
 
 export const VerifyOtpScreen: React.FC<VerifyOtpScreenProps> = ({ route }) => {
-  const email = route?.params?.email || 'your-email@example.com';
-  const navigation = useAppNavigation();
+  const email = route?.params?.email || '';
+  const [expiresAt, setExpiresAt] = useState(Date.now() + 300000);
+  const [remaining, setRemaining] = useState(300);
+  const [resendAt, setResendAt] = useState(Date.now() + 60000);
+  const navigation = useAuthNavigation();
   const insets = useSafeAreaInsets();
-  const login = useAuthStore((state) => state.login);
+  const login = useAuthStore(state => state.login);
 
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [timer, setTimer] = useState(60);
@@ -43,22 +47,30 @@ export const VerifyOtpScreen: React.FC<VerifyOtpScreenProps> = ({ route }) => {
   const inputRefs = useRef<any[]>([]);
 
   useEffect(() => {
-    let interval: any;
-    if (timer > 0) {
-      interval = setInterval(() => {
-        setTimer((prev) => prev - 1);
-      }, 1000);
-    } else {
-      setCanResend(true);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
+    const tick = () => {
+      const seconds = Math.max(0, Math.ceil((resendAt - Date.now()) / 1000));
+      setTimer(seconds);
+      setCanResend(seconds === 0);
+      setRemaining(Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000)));
     };
-  }, [timer]);
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [expiresAt, resendAt]);
 
   const handleOtpChange = (value: string, index: number) => {
     const newOtp = [...otp];
-    newOtp[index] = value;
+    const digits = value.replace(/\D/g, '');
+    if (digits.length > 1) {
+      digits
+        .slice(0, 6 - index)
+        .split('')
+        .forEach((digit, offset) => {
+          newOtp[index + offset] = digit;
+        });
+    } else {
+      newOtp[index] = digits;
+    }
     setOtp(newOtp);
     setErrorMessage('');
 
@@ -75,9 +87,14 @@ export const VerifyOtpScreen: React.FC<VerifyOtpScreenProps> = ({ route }) => {
   };
 
   const handleVerify = async () => {
+    if (isLoading || isResending) return;
+    if (!remaining) {
+      setErrorMessage('Mã đã hết hạn. Vui lòng gửi lại mã.');
+      return;
+    }
     const fullOtp = otp.join('');
-    if (fullOtp.length < 6) {
-      setErrorMessage('Please enter all 6 digits of the verification code');
+    if (!/^\d{6}$/.test(fullOtp)) {
+      setErrorMessage('Vui lòng nhập đủ 6 chữ số của mã xác thực.');
       return;
     }
 
@@ -88,35 +105,48 @@ export const VerifyOtpScreen: React.FC<VerifyOtpScreenProps> = ({ route }) => {
       if (res?.user && res?.token) {
         await login(res.token, res.user);
       } else {
-        navigation.navigate(SCREEN_NAMES.LOGIN as any);
+        navigation.navigate(SCREEN_NAMES.LOGIN);
       }
     } catch (err: any) {
-      setErrorMessage(err.message || 'Invalid or expired verification code');
+      setErrorMessage(err.message || 'Mã xác thực không đúng hoặc đã hết hạn.');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleResend = async () => {
-    if (!canResend || isResending) return;
+    if (!canResend || isResending || isLoading) return;
 
     try {
       setIsResending(true);
       setErrorMessage('');
       setSuccessMessage('');
       await authService.resendOtp(email);
-      setSuccessMessage('A new verification code has been sent to your inbox.');
+      setSuccessMessage('Mã xác thực mới đã được gửi đến email của bạn.');
+      setExpiresAt(Date.now() + 300000);
+      setResendAt(Date.now() + 60000);
+      setOtp(['', '', '', '', '', '']);
       setTimer(60);
       setCanResend(false);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to resend code. Please try again.');
+      setErrorMessage(
+        err.message || 'Không thể gửi lại mã xác thực. Vui lòng thử lại.',
+      );
     } finally {
       setIsResending(false);
     }
   };
 
   return (
-    <View style={[styles.root, { paddingTop: Math.max(insets.top, 12), paddingBottom: Math.max(insets.bottom, 16) }]}>
+    <View
+      style={[
+        styles.root,
+        {
+          paddingTop: Math.max(insets.top, 12),
+          paddingBottom: Math.max(insets.bottom, 16),
+        },
+      ]}
+    >
       <StatusBar barStyle="dark-content" />
 
       {/* Top Header with Circular Back Button */}
@@ -140,10 +170,11 @@ export const VerifyOtpScreen: React.FC<VerifyOtpScreenProps> = ({ route }) => {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
+          <AuthBrand />
           <View style={styles.headerSection}>
-            <AppText style={styles.title}>Verify Email ✉️</AppText>
+            <AppText style={styles.title}>Xác thực email</AppText>
             <AppText style={styles.subtitle}>
-              We sent a 6-digit confirmation code to{'\n'}
+              Mã xác thực gồm 6 chữ số đã được gửi đến{'\n'}
               <AppText style={styles.emailHighlight}>{email}</AppText>
             </AppText>
           </View>
@@ -156,7 +187,9 @@ export const VerifyOtpScreen: React.FC<VerifyOtpScreenProps> = ({ route }) => {
 
           {successMessage ? (
             <View style={styles.successAlert}>
-              <AppText style={styles.successAlertText}>✓ {successMessage}</AppText>
+              <AppText style={styles.successAlertText}>
+                ✓ {successMessage}
+              </AppText>
             </View>
           ) : null}
 
@@ -165,23 +198,26 @@ export const VerifyOtpScreen: React.FC<VerifyOtpScreenProps> = ({ route }) => {
             {otp.map((digit, idx) => (
               <TextInput
                 key={idx}
-                ref={(ref) => {
+                ref={ref => {
                   inputRefs.current[idx] = ref;
                 }}
-                style={[
-                  styles.otpBox,
-                  digit ? styles.otpBoxFilled : null,
-                ]}
+                style={[styles.otpBox, digit ? styles.otpBoxFilled : null]}
                 keyboardType="number-pad"
-                maxLength={1}
+                maxLength={6}
+                editable={!isLoading && !isResending}
+                accessibilityLabel={`Chữ số xác thực thứ ${idx + 1}`}
                 value={digit}
-                onChangeText={(val) => handleOtpChange(val, idx)}
-                onKeyPress={(e) => handleKeyPress(e, idx)}
+                onChangeText={val => handleOtpChange(val, idx)}
+                onKeyPress={e => handleKeyPress(e, idx)}
                 selectTextOnFocus
               />
             ))}
           </View>
 
+          <AppText style={styles.timerText}>
+            Mã hết hạn sau {Math.floor(remaining / 60)}:
+            {String(remaining % 60).padStart(2, '0')}
+          </AppText>
           {/* Resend Section */}
           <View style={styles.resendRow}>
             {canResend ? (
@@ -191,12 +227,13 @@ export const VerifyOtpScreen: React.FC<VerifyOtpScreenProps> = ({ route }) => {
                 disabled={isResending}
               >
                 <AppText style={styles.resendLink}>
-                  {isResending ? 'Sending...' : 'Resend Code'}
+                  {isResending ? 'Đang gửi...' : 'Gửi lại mã'}
                 </AppText>
               </TouchableOpacity>
             ) : (
               <AppText style={styles.timerText}>
-                Resend code in <AppText style={styles.timerBold}>{timer}s</AppText>
+                Gửi lại mã sau{' '}
+                <AppText style={styles.timerBold}>{timer} giây</AppText>
               </AppText>
             )}
           </View>
@@ -205,13 +242,13 @@ export const VerifyOtpScreen: React.FC<VerifyOtpScreenProps> = ({ route }) => {
           <TouchableOpacity
             activeOpacity={0.85}
             onPress={handleVerify}
-            disabled={isLoading}
+            disabled={isLoading || isResending}
             style={[styles.verifyBtn, isLoading && styles.btnDisabled]}
           >
             {isLoading ? (
               <ActivityIndicator color="#FFFFFF" size="small" />
             ) : (
-              <AppText style={styles.verifyBtnText}>Verify & Continue</AppText>
+              <AppText style={styles.verifyBtnText}>Xác thực</AppText>
             )}
           </TouchableOpacity>
         </ScrollView>
@@ -239,9 +276,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -252,7 +287,7 @@ const styles = StyleSheet.create({
     marginTop: -2,
   },
   scrollContent: {
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: 36,
     paddingTop: spacing.sm,
     paddingBottom: spacing.xxl,
   },
@@ -261,8 +296,8 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '800',
+    fontSize: 24,
+    fontWeight: '500',
     color: '#0F172A',
     letterSpacing: -0.5,
   },
@@ -322,7 +357,7 @@ const styles = StyleSheet.create({
     color: '#0F172A',
   },
   otpBoxFilled: {
-    borderColor: '#2563EB',
+    borderColor: '#2F5ABD',
     backgroundColor: '#EFF6FF',
   },
   resendRow: {
@@ -332,7 +367,7 @@ const styles = StyleSheet.create({
   resendLink: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#2563EB',
+    color: '#2F5ABD',
   },
   timerText: {
     fontSize: 14,
@@ -343,17 +378,13 @@ const styles = StyleSheet.create({
     color: '#0F172A',
   },
   verifyBtn: {
-    width: '100%',
-    height: 52,
+    width: 156,
+    alignSelf: 'center',
+    height: 48,
     borderRadius: 9999,
-    backgroundColor: '#2563EB',
+    backgroundColor: '#2F5ABD',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#2563EB',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 3,
   },
   btnDisabled: {
     opacity: 0.7,

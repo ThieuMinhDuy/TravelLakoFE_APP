@@ -1,6 +1,10 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
+  Image,
+  RefreshControl,
+  Alert,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
@@ -16,15 +20,49 @@ import { SCREEN_NAMES } from '@constants/screenNames';
 export const ProfileScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const navigation = useAppNavigation();
-  const user = useAuthStore((state) => state.user);
-  const logout = useAuthStore((state) => state.logout);
+  const user = useAuthStore(state => state.user);
+  const logout = useAuthStore(state => state.logout);
 
+  const refreshProfile = useAuthStore(state => state.refreshProfile);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const refresh = useCallback(async () => {
+    setRefreshing(true);
+    setLoadError('');
+    try {
+      await refreshProfile();
+    } catch (error) {
+      setLoadError((error as Error).message);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refreshProfile]);
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh]),
+  );
   const handleLogout = async () => {
-    await logout();
+    try {
+      await logout();
+    } catch {
+      Alert.alert(
+        'Đăng xuất',
+        'Không thể xóa phiên trên thiết bị. Vui lòng thử lại.',
+      );
+    }
   };
 
   return (
-    <View style={[styles.root, { paddingTop: Math.max(insets.top, 12), paddingBottom: Math.max(insets.bottom, 16) }]}>
+    <View
+      style={[
+        styles.root,
+        {
+          paddingTop: Math.max(insets.top, 12),
+          paddingBottom: Math.max(insets.bottom, 16),
+        },
+      ]}
+    >
       <StatusBar barStyle="dark-content" />
 
       {/* Top Header Bar */}
@@ -34,7 +72,7 @@ export const ProfileScreen: React.FC = () => {
         </AppText>
         <TouchableOpacity
           activeOpacity={0.7}
-          onPress={() => navigation.navigate(SCREEN_NAMES.SETTINGS as any)}
+          onPress={() => navigation.navigate(SCREEN_NAMES.SETTINGS)}
           style={styles.settingsButton}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         >
@@ -45,18 +83,29 @@ export const ProfileScreen: React.FC = () => {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={refresh} />
+        }
       >
+        {loadError ? <AppText color="danger">{loadError}</AppText> : null}
         {/* User Profile Card */}
         <View style={styles.profileCard}>
           <View style={styles.avatarContainer}>
-            <View style={styles.avatarCircle}>
-              <AppText variant="h1" color="primary">
-                {user?.name ? user.name[0].toUpperCase() : 'U'}
-              </AppText>
-            </View>
+            {user?.avatar ? (
+              <Image
+                source={{ uri: user.avatar }}
+                style={styles.avatarCircle}
+              />
+            ) : (
+              <View style={styles.avatarCircle}>
+                <AppText variant="h1" color="primary">
+                  {user?.name ? user.name[0].toUpperCase() : 'U'}
+                </AppText>
+              </View>
+            )}
             <TouchableOpacity
               activeOpacity={0.8}
-              onPress={() => navigation.navigate(SCREEN_NAMES.EDIT_PROFILE as any)}
+              onPress={() => navigation.navigate(SCREEN_NAMES.EDIT_PROFILE)}
               style={styles.editBadge}
             >
               <AppText style={styles.editBadgeIcon}>✎</AppText>
@@ -64,30 +113,53 @@ export const ProfileScreen: React.FC = () => {
           </View>
 
           <AppText variant="h2" color="main" style={styles.userName}>
-            {user?.name || 'Tài khoản Khách'}
+            {user?.name || 'Chưa cập nhật họ tên'}
           </AppText>
 
           <AppText variant="body" color="sub" style={styles.userEmail}>
-            {user?.email || 'guest@travellako.vn'}
+            {user?.email || 'Chưa có thông tin email'}
           </AppText>
 
           <AppBadge
-            label={user?.isVerified ? '✓ Đã xác thực OTP' : 'Chưa xác thực OTP'}
+            label={
+              user?.isVerified === true
+                ? '✓ Đã xác thực OTP'
+                : user?.isVerified === false
+                ? 'Chưa xác thực OTP'
+                : 'Thành viên TravelLako'
+            }
             variant={user?.isVerified ? 'teal' : 'sand'}
             size="sm"
             style={styles.verifiedBadge}
           />
         </View>
 
+        <View style={styles.cardGroup}>
+          <AppText>
+            Chuyến đi: {user?.stats?.trips ?? '—'} · Yêu thích:{' '}
+            {user?.stats?.favorites ?? '—'} · Đánh giá:{' '}
+            {user?.stats?.reviews ?? '—'}
+          </AppText>
+          <AppText>
+            Sở thích: {user?.travelPreferences?.join(', ') || 'Chưa thiết lập'}
+          </AppText>
+          <AppText>
+            Ngân sách: {user?.favoriteBudget || 'Chưa thiết lập'}
+          </AppText>
+        </View>
         {/* Section: Account Actions */}
         <View style={styles.section}>
-          <AppText variant="captionMedium" color="muted" style={styles.sectionHeader}>
+          <AppText
+            variant="captionMedium"
+            color="muted"
+            style={styles.sectionHeader}
+          >
             TÀI KHOẢN
           </AppText>
           <View style={styles.cardGroup}>
             <TouchableOpacity
               activeOpacity={0.7}
-              onPress={() => navigation.navigate(SCREEN_NAMES.EDIT_PROFILE as any)}
+              onPress={() => navigation.navigate(SCREEN_NAMES.EDIT_PROFILE)}
               style={styles.rowItem}
             >
               <View style={styles.rowLeft}>
@@ -110,7 +182,7 @@ export const ProfileScreen: React.FC = () => {
 
             <TouchableOpacity
               activeOpacity={0.7}
-              onPress={() => navigation.navigate(SCREEN_NAMES.SETTINGS as any)}
+              onPress={() => navigation.navigate(SCREEN_NAMES.SETTINGS)}
               style={styles.rowItem}
             >
               <View style={styles.rowLeft}>
@@ -120,7 +192,7 @@ export const ProfileScreen: React.FC = () => {
                     Cài đặt ứng dụng & Bảo mật
                   </AppText>
                   <AppText variant="caption" color="sub">
-                    Đổi mật khẩu, thông báo, ngôn ngữ
+                    Đổi mật khẩu và đăng xuất
                   </AppText>
                 </View>
               </View>
@@ -169,7 +241,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.background.subtle,
+    backgroundColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -182,9 +254,8 @@ const styles = StyleSheet.create({
   },
   profileCard: {
     backgroundColor: colors.background.surface,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border.subtle,
+    borderRadius: 0,
+    padding: spacing.md,
     paddingVertical: spacing.xl,
     paddingHorizontal: spacing.lg,
     alignItems: 'center',

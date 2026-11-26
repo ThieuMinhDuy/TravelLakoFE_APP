@@ -1,11 +1,23 @@
-import React, { useRef, useEffect } from 'react';
-import { StyleSheet, Platform, Pressable, Animated, Easing, View } from 'react-native';
+import React, { useRef, useEffect, useCallback } from 'react';
+import {
+  StyleSheet,
+  Platform,
+  Pressable,
+  Animated,
+  Easing,
+} from 'react-native';
 import {
   createBottomTabNavigator,
   BottomTabBarButtonProps,
 } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Defs, LinearGradient, Stop, Circle, Ellipse } from 'react-native-svg';
+import Svg, {
+  Defs,
+  LinearGradient,
+  Stop,
+  Circle,
+  Ellipse,
+} from 'react-native-svg';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faClaude } from '@fortawesome/free-brands-svg-icons';
 import { SCREEN_NAMES } from '@constants/screenNames';
@@ -23,7 +35,7 @@ import { ProfileScreen } from '@screens/Profile/ProfileScreen';
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 const ACTIVE_COLOR = colors.primary.light; // #0284C7
-const INACTIVE_COLOR = colors.text.muted;  // #94A3B8
+const INACTIVE_COLOR = colors.text.muted; // #94A3B8
 
 interface TabIconProps {
   focused: boolean;
@@ -67,7 +79,7 @@ const renderProfileIcon = ({ focused, color, size }: TabIconProps) => (
 /**
  * Tab Bar Button chuẩn cho 4 tab xung quanh: không rung lắc, không đổi opacity
  */
-const StandardTabBarButton: React.FC<BottomTabBarButtonProps> = (props) => (
+const StandardTabBarButton: React.FC<BottomTabBarButtonProps> = props => (
   <Pressable
     {...props}
     android_ripple={{ color: 'transparent' }}
@@ -81,14 +93,13 @@ const StandardTabBarButton: React.FC<BottomTabBarButtonProps> = (props) => (
   </Pressable>
 );
 
-
-const AIChatLiquidButton: React.FC<BottomTabBarButtonProps> = (props) => {
+const AIChatLiquidButton: React.FC<BottomTabBarButtonProps> = props => {
   const jumpAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const isFocused = !!props.accessibilityState?.selected;
 
-  const triggerBounce = () => {
+  const triggerBounce = useCallback(() => {
     jumpAnim.setValue(0);
     scaleAnim.setValue(1);
     Animated.parallel([
@@ -120,7 +131,7 @@ const AIChatLiquidButton: React.FC<BottomTabBarButtonProps> = (props) => {
         }),
       ]),
     ]).start();
-  };
+  }, [jumpAnim, scaleAnim]);
 
   const handlePress = (e: any) => {
     triggerBounce();
@@ -131,7 +142,7 @@ const AIChatLiquidButton: React.FC<BottomTabBarButtonProps> = (props) => {
     if (isFocused) {
       triggerBounce();
     }
-  }, [isFocused]);
+  }, [isFocused, triggerBounce]);
 
   return (
     <Pressable
@@ -145,10 +156,7 @@ const AIChatLiquidButton: React.FC<BottomTabBarButtonProps> = (props) => {
         style={[
           styles.liquidContainer,
           {
-            transform: [
-              { translateY: jumpAnim },
-              { scale: scaleAnim },
-            ],
+            transform: [{ translateY: jumpAnim }, { scale: scaleAnim }],
           },
         ]}
       >
@@ -182,20 +190,9 @@ const AIChatLiquidButton: React.FC<BottomTabBarButtonProps> = (props) => {
             </LinearGradient>
           </Defs>
 
-          <Circle
-            cx="27"
-            cy="27"
-            r="26"
-            fill="url(#clearGlassGrad)"
-          />
+          <Circle cx="27" cy="27" r="26" fill="url(#clearGlassGrad)" />
 
-          <Ellipse
-            cx="27"
-            cy="14"
-            rx="16"
-            ry="7"
-            fill="url(#glossHighlight)"
-          />
+          <Ellipse cx="27" cy="14" rx="16" ry="7" fill="url(#glossHighlight)" />
         </Svg>
 
         {/* Icon Claude Brands */}
@@ -227,7 +224,7 @@ export const MainTabNavigator: React.FC = () => {
         animation: 'none',
         tabBarActiveTintColor: ACTIVE_COLOR,
         tabBarInactiveTintColor: INACTIVE_COLOR,
-        tabBarButton: (props) => <StandardTabBarButton {...props} />,
+        tabBarButton: props => <StandardTabBarButton {...props} />,
         tabBarStyle: [
           styles.tabBar,
           {
@@ -244,7 +241,7 @@ export const MainTabNavigator: React.FC = () => {
         name={SCREEN_NAMES.HOME_TAB as 'HomeTab'}
         component={HomeScreen}
         options={{
-          tabBarLabel: 'Home',
+          tabBarLabel: 'Trang chủ',
           tabBarIcon: renderHomeIcon,
         }}
       />
@@ -254,7 +251,7 @@ export const MainTabNavigator: React.FC = () => {
         name={SCREEN_NAMES.DIARY_TAB as 'DiaryTab'}
         component={DiaryScreen}
         options={{
-          tabBarLabel: 'Diary',
+          tabBarLabel: 'Nhật ký',
           tabBarIcon: renderDiaryIcon,
         }}
       />
@@ -266,7 +263,7 @@ export const MainTabNavigator: React.FC = () => {
         options={{
           tabBarLabel: () => null,
           tabBarIcon: () => null,
-          tabBarButton: (props) => <AIChatLiquidButton {...props} />,
+          tabBarButton: props => <AIChatLiquidButton {...props} />,
         }}
       />
 
@@ -275,7 +272,7 @@ export const MainTabNavigator: React.FC = () => {
         name={SCREEN_NAMES.SCHEDULE_TAB as 'ScheduleTab'}
         component={ScheduleScreen}
         options={{
-          tabBarLabel: 'Schedule',
+          tabBarLabel: 'Lịch trình',
           tabBarIcon: renderScheduleIcon,
         }}
       />
@@ -285,7 +282,7 @@ export const MainTabNavigator: React.FC = () => {
         name={SCREEN_NAMES.PROFILE_TAB as 'ProfileTab'}
         component={ProfileScreen}
         options={{
-          tabBarLabel: 'Profile',
+          tabBarLabel: 'Hồ sơ',
           tabBarIcon: renderProfileIcon,
         }}
       />

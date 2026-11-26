@@ -4,13 +4,17 @@ import {
   ActivityIndicator,
   StyleSheet,
   ViewStyle,
-  TextStyle,
   View,
 } from 'react-native';
-import { colors, typography, spacing, radius } from '@theme';
+import { colors, spacing, radius } from '@theme';
 import { AppText } from './AppText';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
+export type ButtonVariant =
+  | 'primary'
+  | 'secondary'
+  | 'outline'
+  | 'ghost'
+  | 'danger';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 export interface AppButtonProps {
@@ -42,7 +46,10 @@ export const AppButton: React.FC<AppButtonProps> = ({
 
   const getContainerStyle = (): ViewStyle => {
     // Size paddings
-    const sizePaddings: Record<ButtonSize, { paddingVertical: number; paddingHorizontal: number }> = {
+    const sizePaddings: Record<
+      ButtonSize,
+      { paddingVertical: number; paddingHorizontal: number }
+    > = {
       sm: { paddingVertical: spacing.xs + 2, paddingHorizontal: spacing.md },
       md: { paddingVertical: spacing.md, paddingHorizontal: spacing.lg },
       lg: { paddingVertical: spacing.lg - 2, paddingHorizontal: spacing.xl },
@@ -53,21 +60,29 @@ export const AppButton: React.FC<AppButtonProps> = ({
     switch (variant) {
       case 'primary':
         variantStyle = {
-          backgroundColor: isInteractive ? colors.primary.main : colors.background.disabled,
+          backgroundColor: isInteractive
+            ? colors.primary.main
+            : colors.background.disabled,
         };
         break;
       case 'secondary':
         variantStyle = {
-          backgroundColor: isInteractive ? colors.primary.soft : colors.background.disabled,
+          backgroundColor: isInteractive
+            ? colors.primary.soft
+            : colors.background.disabled,
           borderWidth: 1,
-          borderColor: isInteractive ? colors.primary.border : colors.border.subtle,
+          borderColor: isInteractive
+            ? colors.primary.border
+            : colors.border.subtle,
         };
         break;
       case 'outline':
         variantStyle = {
           backgroundColor: 'transparent',
           borderWidth: 1.5,
-          borderColor: isInteractive ? colors.primary.main : colors.border.subtle,
+          borderColor: isInteractive
+            ? colors.primary.main
+            : colors.border.subtle,
         };
         break;
       case 'ghost':
@@ -77,7 +92,9 @@ export const AppButton: React.FC<AppButtonProps> = ({
         break;
       case 'danger':
         variantStyle = {
-          backgroundColor: isInteractive ? colors.status.error : colors.background.disabled,
+          backgroundColor: isInteractive
+            ? colors.status.error
+            : colors.background.disabled,
         };
         break;
     }
@@ -106,7 +123,10 @@ export const AppButton: React.FC<AppButtonProps> = ({
     }
   };
 
-  const spinnerColor = variant === 'primary' || variant === 'danger' ? colors.text.inverse : colors.primary.main;
+  const spinnerColor =
+    variant === 'primary' || variant === 'danger'
+      ? colors.text.inverse
+      : colors.primary.main;
 
   return (
     <TouchableOpacity
@@ -126,7 +146,9 @@ export const AppButton: React.FC<AppButtonProps> = ({
           >
             {title}
           </AppText>
-          {rightIcon && <View style={styles.rightIconContainer}>{rightIcon}</View>}
+          {rightIcon && (
+            <View style={styles.rightIconContainer}>{rightIcon}</View>
+          )}
         </View>
       )}
     </TouchableOpacity>
@@ -150,4 +172,3 @@ const styles = StyleSheet.create({
     marginLeft: spacing.sm,
   },
 });
-

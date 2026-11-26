@@ -1,3 +1,4 @@
+import { AuthBrand } from '@components/common/AuthBrand';
 import React, { useState } from 'react';
 import {
   View,
@@ -11,13 +12,13 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText, AppTextInput } from '@components/common';
-import { colors, spacing, radius } from '@theme';
+import { spacing, radius } from '@theme';
 import { SCREEN_NAMES } from '@constants/screenNames';
 import { authService } from '@services/auth.service';
-import { useAppNavigation } from '@hooks/useAppNavigation';
+import { useAuthNavigation } from '@hooks/useAuthNavigation';
 
 export const ForgotPasswordScreen: React.FC = () => {
-  const navigation = useAppNavigation();
+  const navigation = useAuthNavigation();
   const insets = useSafeAreaInsets();
 
   const [email, setEmail] = useState('');
@@ -28,11 +29,11 @@ export const ForgotPasswordScreen: React.FC = () => {
   const handleSend = async () => {
     const trimmed = email.trim();
     if (!trimmed) {
-      setEmailError('Please enter your email');
+      setEmailError('Vui lòng nhập email.');
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-      setEmailError('Invalid email format (e.g. user@gmail.com)');
+      setEmailError('Email không hợp lệ (ví dụ: ban@gmail.com).');
       return;
     }
 
@@ -40,16 +41,26 @@ export const ForgotPasswordScreen: React.FC = () => {
       setIsLoading(true);
       setErrorMessage('');
       await authService.forgotPassword(trimmed);
-      navigation.navigate(SCREEN_NAMES.RESET_PASSWORD as any, { email: trimmed });
+      navigation.navigate(SCREEN_NAMES.RESET_PASSWORD, { email: trimmed });
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to send reset code. Please try again.');
+      setErrorMessage(
+        err.message || 'Không thể gửi mã đặt lại mật khẩu. Vui lòng thử lại.',
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <View style={[styles.root, { paddingTop: Math.max(insets.top, 12), paddingBottom: Math.max(insets.bottom, 16) }]}>
+    <View
+      style={[
+        styles.root,
+        {
+          paddingTop: Math.max(insets.top, 12),
+          paddingBottom: Math.max(insets.bottom, 16),
+        },
+      ]}
+    >
       <StatusBar barStyle="dark-content" />
 
       {/* Top Header with Circular Back Button */}
@@ -73,10 +84,11 @@ export const ForgotPasswordScreen: React.FC = () => {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
+          <AuthBrand />
           <View style={styles.headerSection}>
-            <AppText style={styles.title}>Forgot Password 🔑</AppText>
+            <AppText style={styles.title}>Quên mật khẩu</AppText>
             <AppText style={styles.subtitle}>
-              Enter the email address registered with your account and we will send you a reset code.
+              Nhập email đã đăng ký để nhận mã đặt lại mật khẩu.
             </AppText>
           </View>
 
@@ -88,13 +100,13 @@ export const ForgotPasswordScreen: React.FC = () => {
 
           <View style={styles.formSection}>
             <AppTextInput
-              label="Email Address"
-              placeholder="e.g. traveler@gmail.com"
+              label="Địa chỉ email"
+              placeholder="Ví dụ: ban@gmail.com"
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
               value={email}
-              onChangeText={(val) => {
+              onChangeText={val => {
                 setEmail(val);
                 if (emailError) setEmailError('');
               }}
@@ -111,18 +123,18 @@ export const ForgotPasswordScreen: React.FC = () => {
               {isLoading ? (
                 <ActivityIndicator color="#FFFFFF" size="small" />
               ) : (
-                <AppText style={styles.submitBtnText}>Send Reset Code</AppText>
+                <AppText style={styles.submitBtnText}>Gửi mã xác thực</AppText>
               )}
             </TouchableOpacity>
           </View>
 
           <View style={styles.footerRow}>
-            <AppText style={styles.footerPromptText}>Remember your password? </AppText>
+            <AppText style={styles.footerPromptText}>Đã nhớ mật khẩu? </AppText>
             <TouchableOpacity
               activeOpacity={0.7}
-              onPress={() => navigation.navigate(SCREEN_NAMES.LOGIN as any)}
+              onPress={() => navigation.navigate(SCREEN_NAMES.LOGIN)}
             >
-              <AppText style={styles.footerLinkText}>Log in</AppText>
+              <AppText style={styles.footerLinkText}>Đăng nhập</AppText>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -150,9 +162,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -163,7 +173,7 @@ const styles = StyleSheet.create({
     marginTop: -2,
   },
   scrollContent: {
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: 36,
     paddingTop: spacing.sm,
     paddingBottom: spacing.xxl,
   },
@@ -172,8 +182,8 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '800',
+    fontSize: 24,
+    fontWeight: '500',
     color: '#0F172A',
     letterSpacing: -0.5,
   },
@@ -204,17 +214,13 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   submitBtn: {
-    width: '100%',
-    height: 52,
+    width: 156,
+    alignSelf: 'center',
+    height: 48,
     borderRadius: 9999,
-    backgroundColor: '#2563EB',
+    backgroundColor: '#2F5ABD',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#2563EB',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 3,
   },
   btnDisabled: {
     opacity: 0.7,
@@ -237,7 +243,6 @@ const styles = StyleSheet.create({
   footerLinkText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#2563EB',
+    color: '#2F5ABD',
   },
 });
-

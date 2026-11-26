@@ -11,10 +11,10 @@ export const ScheduleScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <AppText variant="h2" color="main">
-        Schedule
+        Lịch trình
       </AppText>
       <AppText variant="body" color="sub" style={styles.subtitle}>
-        Màn hình Lịch trình chuyến đi (Base Tab)
+        Chức năng lịch trình chưa được tích hợp.
       </AppText>
     </View>
   );
@@ -31,4 +31,3 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
 });
-

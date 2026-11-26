@@ -11,10 +11,10 @@ export const HomeScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <AppText variant="h2" color="main">
-        Home
+        Trang chủ
       </AppText>
       <AppText variant="body" color="sub" style={styles.subtitle}>
-        Màn hình Trang chủ (Base Tab)
+        Chưa có nội dung để hiển thị.
       </AppText>
     </View>
   );
@@ -31,4 +31,3 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
 });
-

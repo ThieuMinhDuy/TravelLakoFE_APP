@@ -11,10 +11,10 @@ export const DiaryScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <AppText variant="h2" color="main">
-        Diary
+        Nhật ký
       </AppText>
       <AppText variant="body" color="sub" style={styles.subtitle}>
-        Màn hình Nhật ký hành trình (Base Tab)
+        Chức năng nhật ký chưa được tích hợp.
       </AppText>
     </View>
   );
@@ -31,4 +31,3 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
 });
-

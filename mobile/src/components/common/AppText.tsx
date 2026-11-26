@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, TextProps, StyleSheet, TextStyle } from 'react-native';
+import { Text, TextProps, TextStyle } from 'react-native';
 import { colors, typography } from '@theme';
 import type { TypographyVariant } from '@theme';
 
@@ -53,4 +53,3 @@ export const AppText: React.FC<AppTextProps> = ({
     </Text>
   );
 };
-

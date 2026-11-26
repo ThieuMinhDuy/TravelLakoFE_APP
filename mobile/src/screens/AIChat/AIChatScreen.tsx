@@ -11,10 +11,10 @@ export const AIChatScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <AppText variant="h2" color="main">
-        AI Chat
+        Trợ lý AI
       </AppText>
       <AppText variant="body" color="sub" style={styles.subtitle}>
-        Màn hình Trợ lý du lịch AI (Base Tab)
+        Chức năng trò chuyện AI chưa được tích hợp.
       </AppText>
     </View>
   );
@@ -31,4 +31,3 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
 });
-

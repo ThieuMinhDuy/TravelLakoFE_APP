@@ -5,40 +5,92 @@ import {
   TouchableOpacity,
   ScrollView,
   StatusBar,
-  Switch,
   Alert,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText, AppTextInput } from '@components/common';
 import { colors, spacing, radius } from '@theme';
 import { useAuthStore } from '@store/useAuthStore';
 import { authService } from '@services/auth.service';
+import { isStrongPassword } from '@utils/authValidation';
 import { useAppNavigation } from '@hooks/useAppNavigation';
 
 export const SettingsScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const navigation = useAppNavigation();
-  const logout = useAuthStore((state) => state.logout);
+  const logout = useAuthStore(state => state.logout);
 
-  // Switch toggles
-  const [pushEnabled, setPushEnabled] = useState(true);
-  const [emailPromoEnabled, setEmailPromoEnabled] = useState(false);
-
+  const user = useAuthStore(state => state.user);
+  const refreshProfile = useAuthStore(state => state.refreshProfile);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   // Change Password Modal State
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isChangingPass, setIsChangingPass] = useState(false);
 
-  const handleLogout = async () => { await logout(); };
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch {
+      Alert.alert(
+        'Đăng xuất',
+        'Không thể xóa phiên trên thiết bị. Vui lòng thử lại.',
+      );
+    }
+  };
 
   const handleChangePassword = async () => {
-    setShowPasswordModal(false);
+    if (isChangingPass) return;
+    if (user?.hasPassword !== false && !currentPassword) {
+      setPasswordError('Nhập mật khẩu hiện tại.');
+      return;
+    }
+    if (!isStrongPassword(newPassword)) {
+      setPasswordError(
+        'Mật khẩu cần ít nhất 6 ký tự, có chữ hoa, chữ thường và số.',
+      );
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Mật khẩu xác nhận không khớp.');
+      return;
+    }
+    try {
+      setIsChangingPass(true);
+      setPasswordError('');
+      await authService.changePassword({
+        currentPassword:
+          user?.hasPassword === false ? undefined : currentPassword,
+        newPassword,
+      });
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setShowPasswordModal(false);
+      Alert.alert('Thành công', 'Mật khẩu đã được cập nhật.');
+      await refreshProfile().catch(() => undefined);
+    } catch (error) {
+      setPasswordError((error as Error).message || 'Không thể đổi mật khẩu.');
+    } finally {
+      setIsChangingPass(false);
+    }
   };
 
   return (
-    <View style={[styles.root, { paddingTop: Math.max(insets.top, 12), paddingBottom: Math.max(insets.bottom, 16) }]}>
+    <View
+      style={[
+        styles.root,
+        {
+          paddingTop: Math.max(insets.top, 12),
+          paddingBottom: Math.max(insets.bottom, 16),
+        },
+      ]}
+    >
       <StatusBar barStyle="dark-content" />
 
       {/* Top Header Bar */}
@@ -63,7 +115,11 @@ export const SettingsScreen: React.FC = () => {
       >
         {/* Section 1: Security & Password */}
         <View style={styles.section}>
-          <AppText variant="captionMedium" color="muted" style={styles.sectionHeader}>
+          <AppText
+            variant="captionMedium"
+            color="muted"
+            style={styles.sectionHeader}
+          >
             BẢO MẬT & TÀI KHOẢN
           </AppText>
           <View style={styles.cardGroup}>
@@ -75,117 +131,15 @@ export const SettingsScreen: React.FC = () => {
               <View style={styles.rowLeft}>
                 <AppText style={styles.rowIcon}>🔒</AppText>
                 <AppText variant="bodyMedium" color="main">
-                  Đổi mật khẩu
+                  {user?.hasPassword === false
+                    ? 'Tạo mật khẩu'
+                    : 'Đổi mật khẩu'}
                 </AppText>
               </View>
               <AppText variant="h3" color="muted">
                 ›
               </AppText>
             </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Section 2: Notifications */}
-        <View style={styles.section}>
-          <AppText variant="captionMedium" color="muted" style={styles.sectionHeader}>
-            THÔNG BÁO
-          </AppText>
-          <View style={styles.cardGroup}>
-            <View style={styles.rowItem}>
-              <View style={styles.rowLeft}>
-                <AppText style={styles.rowIcon}>🔔</AppText>
-                <View>
-                  <AppText variant="bodyMedium" color="main">
-                    Thông báo đẩy
-                  </AppText>
-                  <AppText variant="caption" color="sub">
-                    Nhắc nhở lịch trình & điểm đến
-                  </AppText>
-                </View>
-              </View>
-              <Switch
-                value={pushEnabled}
-                onValueChange={setPushEnabled}
-                trackColor={{ false: colors.border.subtle, true: colors.primary.main }}
-                thumbColor={colors.background.surface}
-              />
-            </View>
-
-            <View style={styles.divider} />
-
-            <View style={styles.rowItem}>
-              <View style={styles.rowLeft}>
-                <AppText style={styles.rowIcon}>✉️</AppText>
-                <View>
-                  <AppText variant="bodyMedium" color="main">
-                    Email khuyến mãi
-                  </AppText>
-                  <AppText variant="caption" color="sub">
-                    Ưu đãi khách sạn & điểm tham quan
-                  </AppText>
-                </View>
-              </View>
-              <Switch
-                value={emailPromoEnabled}
-                onValueChange={setEmailPromoEnabled}
-                trackColor={{ false: colors.border.subtle, true: colors.primary.main }}
-                thumbColor={colors.background.surface}
-              />
-            </View>
-          </View>
-        </View>
-
-        {/* Section 3: Preferences */}
-        <View style={styles.section}>
-          <AppText variant="captionMedium" color="muted" style={styles.sectionHeader}>
-            TUỲ CHỌN HỆ THỐNG
-          </AppText>
-          <View style={styles.cardGroup}>
-            <View style={styles.rowItem}>
-              <View style={styles.rowLeft}>
-                <AppText style={styles.rowIcon}>🌐</AppText>
-                <AppText variant="bodyMedium" color="main">
-                  Ngôn ngữ
-                </AppText>
-              </View>
-              <AppText variant="body" color="sub">
-                Tiếng Việt (VN)
-              </AppText>
-            </View>
-
-            <View style={styles.divider} />
-
-            <View style={styles.rowItem}>
-              <View style={styles.rowLeft}>
-                <AppText style={styles.rowIcon}>💵</AppText>
-                <AppText variant="bodyMedium" color="main">
-                  Đơn vị tiền tệ
-                </AppText>
-              </View>
-              <AppText variant="body" color="sub">
-                VNĐ (₫)
-              </AppText>
-            </View>
-          </View>
-        </View>
-
-        {/* Section 4: App Information */}
-        <View style={styles.section}>
-          <AppText variant="captionMedium" color="muted" style={styles.sectionHeader}>
-            VỀ ỨNG DỤNG
-          </AppText>
-          <View style={styles.cardGroup}>
-            <View style={styles.rowItem}>
-              <View style={styles.rowLeft}>
-                <AppText style={styles.rowIcon}>ℹ️</AppText>
-                <AppText variant="bodyMedium" color="main">
-                  Phiên bản
-                </AppText>
-              </View>
-              <AppText variant="body" color="sub">
-                TravelLako v1.0.0
-              </AppText>
-            </View>
           </View>
         </View>
 
@@ -206,59 +160,90 @@ export const SettingsScreen: React.FC = () => {
         visible={showPasswordModal}
         transparent
         animationType="fade"
-        onRequestClose={() => setShowPasswordModal(false)}
+        onRequestClose={() => {
+          if (!isChangingPass) setShowPasswordModal(false);
+        }}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <AppText variant="h2" color="main" style={styles.modalTitle}>
-              Đổi mật khẩu mới
-            </AppText>
-            <AppText variant="caption" color="sub" style={styles.modalSubtitle}>
-              Mật khẩu phải có tối thiểu 6 ký tự để đảm bảo an toàn.
-            </AppText>
-
-            <AppTextInput
-              label="Mật khẩu mới"
-              placeholder="Nhập ít nhất 6 ký tự"
-              value={newPassword}
-              onChangeText={setNewPassword}
-              secureTextEntry
-              containerStyle={styles.modalInput}
-            />
-
-            <AppTextInput
-              label="Xác nhận mật khẩu"
-              placeholder="Nhập lại mật khẩu mới"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
-              containerStyle={styles.modalInput}
-            />
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => setShowPasswordModal(false)}
-                style={styles.modalCancelButton}
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <ScrollView keyboardShouldPersistTaps="handled">
+            <View style={styles.modalContent}>
+              <AppText variant="h2" color="main" style={styles.modalTitle}>
+                Đổi mật khẩu mới
+              </AppText>
+              <AppText
+                variant="caption"
+                color="sub"
+                style={styles.modalSubtitle}
               >
-                <AppText variant="button" color="sub">
-                  Hủy
-                </AppText>
-              </TouchableOpacity>
+                Mật khẩu cần ít nhất 6 ký tự, có chữ hoa, chữ thường và số.
+              </AppText>
 
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={handleChangePassword}
-                disabled={isChangingPass}
-                style={styles.modalSaveButton}
-              >
-                <AppText variant="button" style={styles.modalSaveText}>
-                  {isChangingPass ? 'Đang lưu...' : 'Xác nhận'}
-                </AppText>
-              </TouchableOpacity>
+              {user?.hasPassword !== false && (
+                <AppTextInput
+                  label="Mật khẩu hiện tại"
+                  value={currentPassword}
+                  onChangeText={setCurrentPassword}
+                  isPassword
+                  editable={!isChangingPass}
+                />
+              )}
+              {passwordError ? (
+                <AppText color="danger">{passwordError}</AppText>
+              ) : null}
+              <AppTextInput
+                label="Mật khẩu mới"
+                placeholder="Nhập ít nhất 6 ký tự"
+                value={newPassword}
+                onChangeText={setNewPassword}
+                isPassword
+                editable={!isChangingPass}
+                containerStyle={styles.modalInput}
+              />
+
+              <AppTextInput
+                label="Xác nhận mật khẩu"
+                placeholder="Nhập lại mật khẩu mới"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry
+                containerStyle={styles.modalInput}
+              />
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  disabled={isChangingPass}
+                  onPress={() => {
+                    setCurrentPassword('');
+                    setNewPassword('');
+                    setConfirmPassword('');
+                    setPasswordError('');
+                    setShowPasswordModal(false);
+                  }}
+                  style={styles.modalCancelButton}
+                >
+                  <AppText variant="button" color="sub">
+                    Hủy
+                  </AppText>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={handleChangePassword}
+                  disabled={isChangingPass}
+                  style={styles.modalSaveButton}
+                >
+                  <AppText variant="button" style={styles.modalSaveText}>
+                    {isChangingPass ? 'Đang lưu...' : 'Xác nhận'}
+                  </AppText>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -283,7 +268,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: colors.background.subtle,
+    backgroundColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -317,9 +302,8 @@ const styles = StyleSheet.create({
   },
   cardGroup: {
     backgroundColor: colors.background.surface,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border.subtle,
+    borderRadius: 0,
+    padding: spacing.md,
     overflow: 'hidden',
   },
   rowItem: {
@@ -346,14 +330,14 @@ const styles = StyleSheet.create({
     height: 52,
     borderRadius: radius.full,
     borderWidth: 1.5,
-    borderColor: '#FCA5A5',
-    backgroundColor: '#FEF2F2',
+    borderColor: 'transparent',
+    backgroundColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: spacing.md,
   },
   logoutButtonText: {
-    color: '#DC2626',
+    color: colors.primary.main,
     fontSize: 16,
     fontWeight: '700',
   },
@@ -406,5 +390,3 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });
-
-

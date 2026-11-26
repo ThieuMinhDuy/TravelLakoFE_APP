@@ -1,6 +1,6 @@
 /**
  * Centralized API URLs for TravelLako
- * Maps 1-1 with docs/04_API_Reference.md
+ * Paths are relative to /api. Keep these aligned with the backend Swagger.
  */
 
 export const API_URLS = {
@@ -14,6 +14,7 @@ export const API_URLS = {
     FORGOT_PASSWORD: '/auth/forgot-password',
     RESET_PASSWORD: '/auth/reset-password',
     PROFILE: '/auth/profile',
+    CHANGE_PASSWORD: '/auth/change-password',
   },
 
   // Cities (/api/cities)
@@ -32,31 +33,36 @@ export const API_URLS = {
   // Reviews (/api/reviews)
   REVIEWS: {
     CREATE: '/reviews',
-    BY_PLACE: (placeId: string) => `/reviews/place/${placeId}`,
+    MINE: '/reviews/me',
+    BY_PLACE: (itemType: string, itemId: string) =>
+      `/reviews/${itemType}/${itemId}`,
+    DETAIL: (id: string) => `/reviews/${id}`,
   },
 
   // Favorites (/api/favorites)
   FAVORITES: {
     BASE: '/favorites',
-    TOGGLE: (placeId: string) => `/favorites/${placeId}`,
+    DETAIL: (id: string) => `/favorites/${id}`,
   },
 
   // Trips (/api/trips)
   TRIPS: {
     BASE: '/trips',
     DETAIL: (id: string) => `/trips/${id}`,
-    UPDATE_SCHEDULE: (id: string) => `/trips/${id}/schedule`,
+    ADD_PLACE: (id: string) => `/trips/${id}/schedule/places`,
+    REMOVE_PLACE: (id: string, subId: string) =>
+      `/trips/${id}/schedule/places/${subId}`,
     REORDER_SCHEDULE: (id: string) => `/trips/${id}/schedule/reorder`,
-    CHECK_IN: (id: string) => `/trips/${id}/checkin`,
+    CHECK_IN: (id: string, subId: string) =>
+      `/trips/${id}/schedule/places/${subId}/check-in`,
     DIARY: (id: string) => `/trips/${id}/diary`,
   },
 
   // Gemini AI (/api/ai)
   AI: {
     CHAT: '/ai/chat',
-    GENERATE_PLAN: '/ai/generate-plan',
-    PARSE_ITINERARY: '/ai/parse-itinerary',
-    OPTIMIZE_ROUTE: '/ai/optimize-route',
+    SUGGEST: '/ai/suggest', // Parsing an itinerary uses this same route with isParse in the body.
+    OPTIMIZE_ROUTE: (tripId: string) => `/ai/optimize/${tripId}`,
   },
+  UPLOAD: '/upload',
 } as const;
-

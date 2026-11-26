@@ -1,3 +1,4 @@
+import { AuthBrand } from '@components/common/AuthBrand';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -11,16 +12,16 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText, AppTextInput } from '@components/common';
-import { colors, spacing, radius } from '@theme';
+import { spacing, radius } from '@theme';
 import { SCREEN_NAMES } from '@constants/screenNames';
 import { STORAGE_KEYS } from '@constants/storageKeys';
 import { storageHelper } from '@helpers/storageHelper';
 import { useAuthStore } from '@store/useAuthStore';
 import { authService } from '@services/auth.service';
-import { useAppNavigation } from '@hooks/useAppNavigation';
+import { useAuthNavigation } from '@hooks/useAuthNavigation';
 
 export const LoginScreen: React.FC = () => {
-  const navigation = useAppNavigation();
+  const navigation = useAuthNavigation();
   const insets = useSafeAreaInsets();
 
   // Form states
@@ -34,13 +35,15 @@ export const LoginScreen: React.FC = () => {
   const [passwordError, setPasswordError] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
-  const login = useAuthStore((state) => state.login);
+  const login = useAuthStore(state => state.login);
 
   // Load saved credentials
   useEffect(() => {
     const loadSavedEmail = async () => {
       try {
-        const saved = await storageHelper.getItem<{ email: string }>(STORAGE_KEYS.SAVED_CREDENTIALS);
+        const saved = await storageHelper.getItem<{ email: string }>(
+          STORAGE_KEYS.SAVED_CREDENTIALS,
+        );
         if (saved?.email) {
           setEmail(saved.email);
           setRememberMe(true);
@@ -60,15 +63,15 @@ export const LoginScreen: React.FC = () => {
 
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
-      setEmailError('Please enter your email');
+      setEmailError('Vui lòng nhập email.');
       isValid = false;
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      setEmailError('Invalid email format (e.g. user@gmail.com)');
+      setEmailError('Email không hợp lệ (ví dụ: ban@gmail.com).');
       isValid = false;
     }
 
     if (!password) {
-      setPasswordError('Please enter your password');
+      setPasswordError('Vui lòng nhập mật khẩu.');
       isValid = false;
     }
 
@@ -88,20 +91,23 @@ export const LoginScreen: React.FC = () => {
       });
 
       if (rememberMe) {
-        await storageHelper.setItem(STORAGE_KEYS.SAVED_CREDENTIALS, { email: email.trim() });
+        await storageHelper.setItem(STORAGE_KEYS.SAVED_CREDENTIALS, {
+          email: email.trim(),
+        });
       } else {
         await storageHelper.removeItem(STORAGE_KEYS.SAVED_CREDENTIALS);
       }
 
       if (res?.user) {
-        await login(res.token || 'bearer_token_placeholder', res.user);
+        await login(res.token, res.user);
       } else {
-        throw new Error('Authentication data not received from server');
+        throw new Error('Không nhận được thông tin đăng nhập từ máy chủ.');
       }
     } catch (err: any) {
       console.warn('[LoginScreen] Error:', err);
       setErrorMessage(
-        err.message || 'Login failed. Please check your credentials and try again.',
+        err.message ||
+          'Đăng nhập thất bại. Vui lòng kiểm tra email và mật khẩu.',
       );
     } finally {
       setIsLoading(false);
@@ -112,12 +118,20 @@ export const LoginScreen: React.FC = () => {
     if (navigation.canGoBack()) {
       navigation.goBack();
     } else {
-      navigation.navigate(SCREEN_NAMES.ONBOARDING as any);
+      navigation.navigate(SCREEN_NAMES.ONBOARDING);
     }
   };
 
   return (
-    <View style={[styles.root, { paddingTop: Math.max(insets.top, 12), paddingBottom: Math.max(insets.bottom, 16) }]}>
+    <View
+      style={[
+        styles.root,
+        {
+          paddingTop: Math.max(insets.top, 12),
+          paddingBottom: Math.max(insets.bottom, 16),
+        },
+      ]}
+    >
       <StatusBar barStyle="dark-content" />
 
       {/* Top Header with Circular Back Button */}
@@ -142,10 +156,13 @@ export const LoginScreen: React.FC = () => {
           showsVerticalScrollIndicator={false}
         >
           {/* Header Typography */}
+          <AuthBrand />
           <View style={styles.headerSection}>
-            <AppText style={styles.welcomeTitle}>Welcome Back! 👋</AppText>
+            <AppText style={styles.welcomeTitle}>
+              Chào mừng bạn trở lại!
+            </AppText>
             <AppText style={styles.welcomeSubtitle}>
-              Sign in to your account to explore destinations and manage your dream trips.
+              Đăng nhập để khám phá điểm đến và quản lý chuyến đi của bạn.
             </AppText>
           </View>
 
@@ -160,13 +177,13 @@ export const LoginScreen: React.FC = () => {
           <View style={styles.formSection}>
             {/* Email Field */}
             <AppTextInput
-              label="Email Address"
-              placeholder="e.g. traveler@gmail.com"
+              label="Địa chỉ email"
+              placeholder="Ví dụ: ban@gmail.com"
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
               value={email}
-              onChangeText={(val) => {
+              onChangeText={val => {
                 setEmail(val);
                 if (emailError) setEmailError('');
               }}
@@ -176,11 +193,11 @@ export const LoginScreen: React.FC = () => {
 
             {/* Password Field */}
             <AppTextInput
-              label="Password"
-              placeholder="Enter your password"
+              label="Mật khẩu"
+              placeholder="Nhập mật khẩu"
               isPassword
               value={password}
-              onChangeText={(val) => {
+              onChangeText={val => {
                 setPassword(val);
                 if (passwordError) setPasswordError('');
               }}
@@ -193,19 +210,25 @@ export const LoginScreen: React.FC = () => {
               <TouchableOpacity
                 activeOpacity={0.8}
                 style={styles.rememberMeRow}
-                onPress={() => setRememberMe((prev) => !prev)}
+                onPress={() => setRememberMe(prev => !prev)}
               >
-                <View style={[styles.checkbox, rememberMe && styles.checkboxActive]}>
+                <View
+                  style={[styles.checkbox, rememberMe && styles.checkboxActive]}
+                >
                   {rememberMe && <AppText style={styles.checkmark}>✓</AppText>}
                 </View>
-                <AppText style={styles.rememberMeText}>Remember me</AppText>
+                <AppText style={styles.rememberMeText}>Ghi nhớ email</AppText>
               </TouchableOpacity>
 
               <TouchableOpacity
                 activeOpacity={0.7}
-                onPress={() => navigation.navigate(SCREEN_NAMES.FORGOT_PASSWORD as any)}
+                onPress={() =>
+                  navigation.navigate(SCREEN_NAMES.FORGOT_PASSWORD)
+                }
               >
-                <AppText style={styles.forgotPasswordText}>Forgot Password?</AppText>
+                <AppText style={styles.forgotPasswordText}>
+                  Quên mật khẩu?
+                </AppText>
               </TouchableOpacity>
             </View>
 
@@ -219,47 +242,21 @@ export const LoginScreen: React.FC = () => {
               {isLoading ? (
                 <ActivityIndicator color="#FFFFFF" size="small" />
               ) : (
-                <AppText style={styles.loginBtnText}>Log In</AppText>
+                <AppText style={styles.loginBtnText}>Đăng nhập</AppText>
               )}
             </TouchableOpacity>
-
-            {/* Divider */}
-            <View style={styles.dividerRow}>
-              <View style={styles.dividerLine} />
-              <AppText style={styles.dividerText}>OR CONTINUE WITH</AppText>
-              <View style={styles.dividerLine} />
-            </View>
-
-            {/* Modern Social Login Buttons */}
-            <View style={styles.socialRow}>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                style={styles.socialBtn}
-                onPress={() => setErrorMessage('Google Sign-In is coming soon.')}
-              >
-                <AppText style={styles.socialIconG}>G</AppText>
-                <AppText style={styles.socialBtnLabel}>Google</AppText>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                activeOpacity={0.8}
-                style={styles.socialBtn}
-                onPress={() => setErrorMessage('Apple Sign-In is coming soon.')}
-              >
-                <AppText style={styles.socialIconApple}></AppText>
-                <AppText style={styles.socialBtnLabel}>Apple</AppText>
-              </TouchableOpacity>
-            </View>
           </View>
 
           {/* Footer Prompt */}
           <View style={styles.footerRow}>
-            <AppText style={styles.footerPromptText}>Don't have an account? </AppText>
+            <AppText style={styles.footerPromptText}>
+              Chưa có tài khoản?{' '}
+            </AppText>
             <TouchableOpacity
               activeOpacity={0.7}
-              onPress={() => navigation.navigate(SCREEN_NAMES.REGISTER as any)}
+              onPress={() => navigation.navigate(SCREEN_NAMES.REGISTER)}
             >
-              <AppText style={styles.footerLinkText}>Create Account</AppText>
+              <AppText style={styles.footerLinkText}>Đăng ký</AppText>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -287,9 +284,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -300,7 +295,7 @@ const styles = StyleSheet.create({
     marginTop: -2,
   },
   scrollContent: {
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: 36,
     paddingTop: spacing.sm,
     paddingBottom: spacing.xxl,
   },
@@ -309,8 +304,8 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   welcomeTitle: {
-    fontSize: 28,
-    fontWeight: '800',
+    fontSize: 24,
+    fontWeight: '500',
     color: '#0F172A',
     letterSpacing: -0.5,
   },
@@ -363,8 +358,8 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   checkboxActive: {
-    backgroundColor: '#2563EB',
-    borderColor: '#2563EB',
+    backgroundColor: '#2F5ABD',
+    borderColor: '#2F5ABD',
   },
   checkmark: {
     color: '#FFFFFF',
@@ -378,20 +373,16 @@ const styles = StyleSheet.create({
   forgotPasswordText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#2563EB',
+    color: '#2F5ABD',
   },
   loginBtn: {
-    width: '100%',
-    height: 52,
+    width: 156,
+    alignSelf: 'center',
+    height: 48,
     borderRadius: 9999,
-    backgroundColor: '#2563EB',
+    backgroundColor: '#2F5ABD',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#2563EB',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 3,
     marginBottom: spacing.xl,
   },
   btnDisabled: {
@@ -401,54 +392,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
-  },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#E2E8F0',
-  },
-  dividerText: {
-    marginHorizontal: spacing.md,
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#94A3B8',
-    letterSpacing: 0.5,
-  },
-  socialRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  socialBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 50,
-    borderRadius: 9999,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    backgroundColor: '#F8FAFC',
-  },
-  socialIconG: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#EA4335',
-    marginRight: spacing.sm,
-  },
-  socialIconApple: {
-    fontSize: 20,
-    color: '#0F172A',
-    marginRight: spacing.sm,
-  },
-  socialBtnLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#334155',
   },
   footerRow: {
     flexDirection: 'row',
@@ -463,6 +406,6 @@ const styles = StyleSheet.create({
   footerLinkText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#2563EB',
+    color: '#2F5ABD',
   },
 });

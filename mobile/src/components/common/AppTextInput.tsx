@@ -52,7 +52,7 @@ export const AppTextInput: React.FC<AppTextInputProps> = ({
   const getBorderColor = () => {
     if (error) return colors.border.error;
     if (isFocused) return colors.border.focused;
-    return colors.border.subtle;
+    return '#2F5ABD';
   };
 
   const effectiveSecureTextEntry = isPassword ? !showPassword : secureTextEntry;
@@ -70,7 +70,9 @@ export const AppTextInput: React.FC<AppTextInputProps> = ({
           styles.inputContainer,
           {
             borderColor: getBorderColor(),
-            backgroundColor: editable ? colors.background.surface : colors.background.subtle,
+            backgroundColor: editable
+              ? colors.background.surface
+              : colors.background.subtle,
           },
         ]}
       >
@@ -89,16 +91,21 @@ export const AppTextInput: React.FC<AppTextInputProps> = ({
         {isPassword ? (
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() => setShowPassword((prev) => !prev)}
+            onPress={() => setShowPassword(prev => !prev)}
             style={styles.eyeToggle}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <AppText variant="caption" color={showPassword ? 'primary' : 'muted'}>
+            <AppText
+              variant="caption"
+              color={showPassword ? 'primary' : 'muted'}
+            >
               {showPassword ? 'Ẩn' : 'Hiện'}
             </AppText>
           </TouchableOpacity>
         ) : (
-          rightIcon && <View style={styles.rightIconContainer}>{rightIcon}</View>
+          rightIcon && (
+            <View style={styles.rightIconContainer}>{rightIcon}</View>
+          )
         )}
       </View>
 
@@ -126,9 +133,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1.2,
-    borderRadius: radius.lg,
+    borderRadius: radius.full,
     paddingHorizontal: spacing.md,
-    minHeight: 50,
+    minHeight: 36,
   },
   input: {
     flex: 1,

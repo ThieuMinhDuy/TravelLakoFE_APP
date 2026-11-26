@@ -9,18 +9,27 @@ import { EditProfileScreen } from '@screens/Profile/EditProfileScreen';
 import { SettingsScreen } from '@screens/Profile/SettingsScreen';
 import { useAuthStore } from '@store/useAuthStore';
 import { colors } from '@theme';
+import { AppButton, AppText } from '@components/common';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export const RootNavigator: React.FC = () => {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const isInitialLoading = useAuthStore((state) => state.isInitialLoading);
-  const initAuth = useAuthStore((state) => state.initAuth);
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+  const isInitialLoading = useAuthStore(state => state.isInitialLoading);
+  const initAuth = useAuthStore(state => state.initAuth);
 
   useEffect(() => {
     initAuth();
   }, [initAuth]);
 
+  const sessionError = useAuthStore(state => state.sessionError);
+  if (sessionError)
+    return (
+      <View style={styles.splashContainer}>
+        <AppText>{sessionError}</AppText>
+        <AppButton title="Thử lại" onPress={initAuth} />
+      </View>
+    );
   if (isInitialLoading) {
     return (
       <View style={styles.splashContainer}>

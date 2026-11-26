@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   View,
+  Image,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
@@ -13,21 +14,77 @@ import { AppText, AppTextInput } from '@components/common';
 import { colors, spacing, radius } from '@theme';
 import { useAuthStore } from '@store/useAuthStore';
 import { authService } from '@services/auth.service';
+import { launchImageLibrary } from 'react-native-image-picker';
+import { isBirthDate } from '@utils/authValidation';
+import type { User } from '@appTypes';
 import { useAppNavigation } from '@hooks/useAppNavigation';
 
 export const EditProfileScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const navigation = useAppNavigation();
-  const user = useAuthStore((state) => state.user);
-  const updateUser = useAuthStore((state) => state.updateUser);
+  const user = useAuthStore(state => state.user);
+  const updateUser = useAuthStore(state => state.updateUser);
 
   const [name, setName] = useState(user?.name || '');
   const [phone, setPhone] = useState(user?.phone || '');
-  const [gender, setGender] = useState<'Nam' | 'Nữ' | 'Khác' | ''>(user?.gender || '');
-  const [dateOfBirth, setDateOfBirth] = useState(user?.dateOfBirth || '');
+  const [gender, setGender] = useState<'Nam' | 'Nữ' | 'Khác' | ''>(
+    user?.gender || '',
+  );
+  const [dateOfBirth, setDateOfBirth] = useState(
+    user?.dateOfBirth?.slice(0, 10) || '',
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [avatar, setAvatar] = useState(user?.avatar || '');
+  const [pickedImage, setPickedImage] = useState<{
+    uri: string;
+    type: string;
+    name: string;
+  } | null>(null);
+  const [preferences, setPreferences] = useState(user?.travelPreferences || []);
+  const [budget, setBudget] = useState<User['favoriteBudget']>(
+    user?.favoriteBudget || '',
+  );
+  const pickAvatar = async () => {
+    try {
+      const result = await launchImageLibrary({
+        mediaType: 'photo',
+        selectionLimit: 1,
+      });
+      if (result.didCancel) return;
+      const image = result.assets?.[0];
+      if (result.errorCode || !image?.uri)
+        throw new Error(
+          'Không thể chọn ảnh. Vui lòng kiểm tra quyền truy cập ảnh và thử lại.',
+        );
+      if (
+        !['image/jpeg', 'image/png', 'image/webp'].includes(image.type || '') ||
+        (image.fileSize || 0) > 5 * 1024 * 1024
+      )
+        throw new Error('Chọn ảnh JPG, PNG hoặc WebP không quá 5 MB.');
+      setAvatar(image.uri);
+      setPickedImage({
+        uri: image.uri,
+        type: image.type!,
+        name: image.fileName || 'avatar.jpg',
+      });
+    } catch (error) {
+      Alert.alert('Chọn ảnh', (error as Error).message);
+    }
+  };
   const handleSave = async () => {
+    if (isSubmitting) return;
+    if (dateOfBirth && !isBirthDate(dateOfBirth)) {
+      Alert.alert(
+        'Lỗi',
+        'Ngày sinh phải hợp lệ, theo YYYY-MM-DD và không ở tương lai.',
+      );
+      return;
+    }
+    if (phone && !/^\+?[0-9\s()-]{8,15}$/.test(phone)) {
+      Alert.alert('Lỗi', 'Số điện thoại không hợp lệ.');
+      return;
+    }
     if (!name.trim()) {
       Alert.alert('Lỗi', 'Họ và tên không được để trống.');
       return;
@@ -35,7 +92,13 @@ export const EditProfileScreen: React.FC = () => {
 
     try {
       setIsSubmitting(true);
+      const avatarUrl = pickedImage
+        ? await authService.uploadAvatar(pickedImage)
+        : avatar;
       const updated = await authService.updateProfile({
+        avatar: avatarUrl,
+        travelPreferences: preferences,
+        favoriteBudget: budget,
         name: name.trim(),
         phone: phone.trim(),
         gender,
@@ -47,14 +110,25 @@ export const EditProfileScreen: React.FC = () => {
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
     } catch (error: any) {
-      Alert.alert('Lỗi cập nhật', error?.message || 'Không thể cập nhật hồ sơ lúc này.');
+      Alert.alert(
+        'Lỗi cập nhật',
+        error?.message || 'Không thể cập nhật hồ sơ lúc này.',
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <View style={[styles.root, { paddingTop: Math.max(insets.top, 12), paddingBottom: Math.max(insets.bottom, 16) }]}>
+    <View
+      style={[
+        styles.root,
+        {
+          paddingTop: Math.max(insets.top, 12),
+          paddingBottom: Math.max(insets.bottom, 16),
+        },
+      ]}
+    >
       <StatusBar barStyle="dark-content" />
 
       {/* Top Header Bar */}
@@ -80,13 +154,20 @@ export const EditProfileScreen: React.FC = () => {
       >
         {/* Avatar Preview */}
         <View style={styles.avatarSection}>
-          <View style={styles.avatarCircle}>
-            <AppText variant="h1" color="primary">
-              {name ? name[0].toUpperCase() : 'U'}
-            </AppText>
-          </View>
+          {avatar ? (
+            <Image source={{ uri: avatar }} style={styles.avatarCircle} />
+          ) : (
+            <View style={styles.avatarCircle}>
+              <AppText variant="h1" color="primary">
+                {name ? name[0].toUpperCase() : 'U'}
+              </AppText>
+            </View>
+          )}
+          <TouchableOpacity onPress={pickAvatar} disabled={isSubmitting}>
+            <AppText color="primary">Chọn ảnh đại diện</AppText>
+          </TouchableOpacity>
           <AppText variant="caption" color="sub" style={styles.avatarHint}>
-            Ảnh đại diện hiển thị theo tài khoản
+            JPG, PNG hoặc WebP · Tối đa 5 MB
           </AppText>
         </View>
 
@@ -101,8 +182,8 @@ export const EditProfileScreen: React.FC = () => {
           />
 
           <AppTextInput
-            label="Địa chỉ Email"
-            placeholder="email@example.com"
+            label="Địa chỉ email"
+            placeholder="Email tài khoản"
             value={user?.email || ''}
             editable={false}
             helperText="Email là định danh tài khoản và không thể thay đổi."
@@ -110,26 +191,74 @@ export const EditProfileScreen: React.FC = () => {
 
           <AppTextInput
             label="Số điện thoại"
-            placeholder="0987 654 321"
+            placeholder="Nhập số điện thoại"
             value={phone}
             onChangeText={setPhone}
             keyboardType="phone-pad"
           />
 
           <AppTextInput
-            label="Ngày sinh (YYYY-MM-DD)"
-            placeholder="2000-01-01"
+            label="Ngày sinh (năm-tháng-ngày)"
+            placeholder="Ví dụ: 2000-01-01"
             value={dateOfBirth}
             onChangeText={setDateOfBirth}
           />
 
+          <AppText variant="bodyMedium">Sở thích du lịch</AppText>
+          <View style={styles.preferenceChips}>
+            {['Biển', 'Núi', 'Văn hóa', 'Ẩm thực', 'Cafe', 'Khám phá'].map(
+              item => (
+                <TouchableOpacity
+                  key={item}
+                  onPress={() =>
+                    setPreferences(prev =>
+                      prev.includes(item)
+                        ? prev.filter(x => x !== item)
+                        : [...prev, item],
+                    )
+                  }
+                  style={[
+                    styles.genderChip,
+                    preferences.includes(item) && styles.genderChipActive,
+                  ]}
+                >
+                  <AppText
+                    color={preferences.includes(item) ? 'primary' : 'sub'}
+                  >
+                    {item}
+                  </AppText>
+                </TouchableOpacity>
+              ),
+            )}
+          </View>
+          <AppText variant="bodyMedium">Ngân sách mong muốn</AppText>
+          <View style={styles.preferenceChips}>
+            {(['Tiết kiệm', 'Trung bình', 'Cao cấp'] as const).map(item => (
+              <TouchableOpacity
+                key={item}
+                onPress={() => setBudget(item)}
+                style={[
+                  styles.genderChip,
+                  budget === item && styles.genderChipActive,
+                ]}
+              >
+                <AppText color={budget === item ? 'primary' : 'sub'}>
+                  {item}
+                </AppText>
+              </TouchableOpacity>
+            ))}
+          </View>
           {/* Gender Selector Chips */}
           <View style={styles.genderContainer}>
-            <AppText variant="captionMedium" color="sub" style={styles.genderLabel}>
+            <AppText
+              variant="captionMedium"
+              color="sub"
+              style={styles.genderLabel}
+            >
               Giới tính
             </AppText>
             <View style={styles.genderChipsRow}>
-              {(['Nam', 'Nữ', 'Khác'] as const).map((g) => {
+              {(['Nam', 'Nữ', 'Khác'] as const).map(g => {
                 const isSelected = gender === g;
                 return (
                   <TouchableOpacity
@@ -178,6 +307,12 @@ export const EditProfileScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  preferenceChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginVertical: 12,
+  },
   root: {
     flex: 1,
     backgroundColor: colors.background.surface,
@@ -193,7 +328,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: colors.background.subtle,
+    backgroundColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -290,4 +425,3 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });
-

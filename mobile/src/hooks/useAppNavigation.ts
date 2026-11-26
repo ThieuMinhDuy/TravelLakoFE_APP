@@ -1,5 +1,10 @@
-import { NavigationProp, RouteProp, useNavigation, useRoute } from '@react-navigation/native';
-import { RootStackParamList } from '@navigation/types';
+import {
+  NavigationProp,
+  RouteProp,
+  useNavigation,
+  useRoute,
+} from '@react-navigation/native';
+import { AuthStackParamList, RootStackParamList } from '@navigation/types';
 
 /**
  * Type-Safe Navigation Hook
@@ -16,3 +21,5 @@ export const useAppRoute = <RouteName extends keyof RootStackParamList>() => {
   return useRoute<RouteProp<RootStackParamList, RouteName>>();
 };
 
+export const useAuthNavigation = () =>
+  useNavigation<NavigationProp<AuthStackParamList>>();
