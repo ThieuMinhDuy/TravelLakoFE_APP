@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   StyleSheet,
   RefreshControl,
@@ -32,7 +32,14 @@ export const HomeScreen: React.FC = () => {
   const [hotels, setHotels] = useState<Place[]>([]);
   const [restaurants, setRestaurants] = useState<Place[]>([]);
   const [cafes, setCafes] = useState<Place[]>([]);
-  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+  // Map: placeId -> favoriteId (_id bản ghi favorite, cần để gọi DELETE /favorites/:id)
+  const [favoriteMap, setFavoriteMap] = useState<Map<string, string>>(new Map());
+  const favoriteIds = useMemo(() => new Set(favoriteMap.keys()), [favoriteMap]);
+  // Các placeId đang chờ API favorite (chặn bấm liên tục)
+  const pendingFavoriteRef = useRef<Set<string>>(new Set());
+
+  // Đếm số lần tải danh sách địa điểm: chỉ áp dụng kết quả của request mới nhất
+  const placesRequestIdRef = useRef(0);
 
   // State bộ lọc và tìm kiếm
   const [searchQuery, setSearchQuery] = useState('');
@@ -50,6 +57,8 @@ export const HomeScreen: React.FC = () => {
      * 2. GET /places/{type}?city=...&search=...&stars=...&minPrice=...&maxPrice=...&minFee=...&maxFee=...&cuisineType=... -> Filtered list
      */
     const loadPlacesWithFilters = useCallback(async (filters: FilterState, keyword: string) => {
+      const requestId = ++placesRequestIdRef.current;
+      const isStale = () => requestId !== placesRequestIdRef.current;
       setIsPlacesLoading(true);
       try {
           const cityId = filters.city || undefined;
@@ -71,6 +80,7 @@ export const HomeScreen: React.FC = () => {
               q,
               city: cityId,
             });
+            if (isStale()) return;
             setPlaces(categorized.attractions);
             setHotels(categorized.hotels);
             setRestaurants(categorized.restaurants);
@@ -126,6 +136,7 @@ export const HomeScreen: React.FC = () => {
               : Promise.resolve([]),
           ]);
 
+        if (isStale()) return;
         setPlaces(fetchedAttractions);
         setHotels(fetchedHotels);
         setRestaurants(fetchedRestaurants);
@@ -133,12 +144,17 @@ export const HomeScreen: React.FC = () => {
       } catch (error) {
         console.warn('Lỗi khi tải dữ liệu địa điểm:', error);
       } finally {
-        setIsPlacesLoading(false);
+        if (!isStale()) {
+          setIsPlacesLoading(false);
+        }
       }
     }, []);
 
     // Tải dữ liệu ban đầu
     const loadInitialData = useCallback(async () => {
+      // Huỷ hiệu lực các request lọc đang chạy dở để không ghi đè dữ liệu ban đầu
+      const requestId = ++placesRequestIdRef.current;
+      setIsPlacesLoading(false);
       try {
         const [
           fetchedCities,
@@ -157,21 +173,23 @@ export const HomeScreen: React.FC = () => {
         ]);
 
         setCities(fetchedCities);
-        setPlaces(fetchedAttractions);
-        setHotels(fetchedHotels);
-        setRestaurants(fetchedRestaurants);
-        setCafes(fetchedCafes);
+        if (requestId === placesRequestIdRef.current) {
+          setPlaces(fetchedAttractions);
+          setHotels(fetchedHotels);
+          setRestaurants(fetchedRestaurants);
+          setCafes(fetchedCafes);
+        }
 
-        // Lưu tập hợp ID yêu thích để check nhanh O(1)
-        const favIds = new Set<string>();
+        // Lưu map placeId -> favoriteId để check nhanh O(1) và xoá đúng bản ghi
+        const favMap = new Map<string, string>();
         fetchedFavorites.forEach((fav) => {
-          if (typeof fav.itemId === 'string') {
-            favIds.add(fav.itemId);
-          } else if (fav.itemId && typeof fav.itemId === 'object' && fav.itemId._id) {
-            favIds.add(fav.itemId._id);
+          const placeId =
+            typeof fav.itemId === 'string' ? fav.itemId : fav.itemId?._id;
+          if (placeId && fav._id) {
+            favMap.set(placeId, fav._id);
           }
         });
-        setFavoriteIds(favIds);
+        setFavoriteMap(favMap);
       } catch (error) {
         console.warn('Lỗi khi tải dữ liệu Trang chủ:', error);
       } finally {
@@ -195,19 +213,46 @@ export const HomeScreen: React.FC = () => {
 
     // Xử lý toggle yêu thích / bookmark
     const handleBookmarkPress = async (place: Place) => {
-      const isSaved = favoriteIds.has(place._id);
-      const newFavorites = new Set(favoriteIds);
+      const placeId = place._id;
+      if (pendingFavoriteRef.current.has(placeId)) return;
+      pendingFavoriteRef.current.add(placeId);
 
-      // Optimistic UI Update
-      if (isSaved) {
-        newFavorites.delete(place._id);
-        setFavoriteIds(newFavorites);
-        await favoriteService.removeFavorite(place._id);
-      } else {
-        newFavorites.add(place._id);
-        setFavoriteIds(newFavorites);
-        const itemType = place.itemType || 'Attraction';
-        await favoriteService.addFavorite(itemType, place._id);
+      const existingFavoriteId = favoriteMap.get(placeId);
+      // Giá trị tạm trong lúc chờ API thêm mới trả về _id thật
+      const PENDING_ID = '__pending__';
+
+      try {
+        if (existingFavoriteId) {
+          // Optimistic: bỏ lưu ngay trên UI
+          setFavoriteMap((prev) => {
+            const next = new Map(prev);
+            next.delete(placeId);
+            return next;
+          });
+          const success =
+            existingFavoriteId !== PENDING_ID &&
+            (await favoriteService.removeFavorite(existingFavoriteId));
+          if (!success) {
+            // Rollback nếu API lỗi
+            setFavoriteMap((prev) => new Map(prev).set(placeId, existingFavoriteId));
+          }
+        } else {
+          // Optimistic: đánh dấu đã lưu ngay trên UI
+          setFavoriteMap((prev) => new Map(prev).set(placeId, PENDING_ID));
+          const itemType = place.itemType || 'Attraction';
+          const newFavoriteId = await favoriteService.addFavorite(itemType, placeId);
+          setFavoriteMap((prev) => {
+            const next = new Map(prev);
+            if (newFavoriteId) {
+              next.set(placeId, newFavoriteId);
+            } else {
+              next.delete(placeId); // Rollback nếu API lỗi
+            }
+            return next;
+          });
+        }
+      } finally {
+        pendingFavoriteRef.current.delete(placeId);
       }
     };
 

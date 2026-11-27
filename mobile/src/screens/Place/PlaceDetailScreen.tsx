@@ -11,41 +11,39 @@ import {
   FlatList,
   Alert,
   StatusBar,
+  RefreshControl,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText, AppButton, AppIcon, AppTextInput } from '@components/common';
-import { colors, fontFamilies, radius, spacing } from '@theme';
+import { colors, fontFamilies } from '@theme';
 import { RootStackParamList } from '@navigation/types';
 import { SCREEN_NAMES } from '@constants/screenNames';
-import { placeService, reviewService, tripService, favoriteService } from '@services';
+import { placeService, reviewService, tripService, authService } from '@services';
+import { IMAGES } from '@assets';
 import { useAuthStore } from '@store/useAuthStore';
-import type { Place, Review, Trip, PlaceItemType } from '@appTypes';
+import type { Place, Review, Trip, User } from '@appTypes';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// Ảnh mặc định chất lượng cao khi địa điểm chưa có ảnh
+// Ảnh bìa mặc định khi địa điểm chưa có ảnh
 const DEFAULT_COVER_IMAGE =
   'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80';
-const DEFAULT_AVATAR =
-  'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80';
 
 export const PlaceDetailScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<RouteProp<RootStackParamList, 'PlaceDetailScreen'>>();
   const insets = useSafeAreaInsets();
-  const currentUser = useAuthStore((state) => state.user);
+  const { user: currentUser, updateUser } = useAuthStore();
 
   const { placeId, placeType, initialPlace } = route.params;
 
   // State dữ liệu
   const [place, setPlace] = useState<Place | null>(initialPlace || null);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [userProfile, setUserProfile] = useState<User | null>(currentUser);
   const [isLoading, setIsLoading] = useState<boolean>(!initialPlace);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-  const [isFavorite, setIsFavorite] = useState<boolean>(initialPlace?.isFavorite || false);
-  const [favoriteId, setFavoriteId] = useState<string | null>(null);
-  const [isTogglingFavorite, setIsTogglingFavorite] = useState<boolean>(false);
 
   // Gallery & UI states
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number>(0);
@@ -98,32 +96,25 @@ export const PlaceDetailScreen: React.FC = () => {
     }
   }, [placeId, placeType]);
 
-  // Kiểm tra trạng thái yêu thích từ API GET /api/favorites
-  const checkFavoriteStatus = useCallback(async () => {
+  // Tải thông tin người dùng & avatar từ API GET /api/auth/profile
+  const loadUserProfile = useCallback(async () => {
     try {
-      const favList = await favoriteService.getFavorites();
-      const found = favList.find((f) => {
-        const itemId = typeof f.itemId === 'object' ? (f.itemId as any)?._id : f.itemId;
-        return itemId === placeId;
-      });
-      if (found) {
-        setIsFavorite(true);
-        setFavoriteId(found._id);
-      } else {
-        setIsFavorite(false);
-        setFavoriteId(null);
+      const profile = await authService.getProfile();
+      if (profile) {
+        setUserProfile(profile);
+        updateUser(profile);
       }
     } catch {
-      // Bỏ qua lỗi favorite nếu chưa đăng nhập
+      // Giữ thông tin từ store nếu offline hoặc lỗi mạng
     }
-  }, [placeId]);
+  }, [updateUser]);
 
   // Khởi tạo dữ liệu
   const initData = useCallback(async () => {
     setIsLoading(true);
-    await Promise.all([loadPlaceDetail(), loadReviews(), checkFavoriteStatus()]);
+    await Promise.all([loadPlaceDetail(), loadReviews(), loadUserProfile()]);
     setIsLoading(false);
-  }, [loadPlaceDetail, loadReviews, checkFavoriteStatus]);
+  }, [loadPlaceDetail, loadReviews, loadUserProfile]);
 
   useEffect(() => {
     initData();
@@ -132,7 +123,7 @@ export const PlaceDetailScreen: React.FC = () => {
   // Pull to refresh
   const onRefresh = async () => {
     setIsRefreshing(true);
-    await Promise.all([loadPlaceDetail(), loadReviews(), checkFavoriteStatus()]);
+    await Promise.all([loadPlaceDetail(), loadReviews(), loadUserProfile()]);
     setIsRefreshing(false);
   };
 
@@ -157,33 +148,6 @@ export const PlaceDetailScreen: React.FC = () => {
     return place?.numReviews || 0;
   }, [reviews.length, place?.numReviews]);
 
-  // Xử lý Toggle Favorite
-  const handleToggleFavorite = async () => {
-    if (isTogglingFavorite) return;
-    setIsTogglingFavorite(true);
-
-    try {
-      if (isFavorite && favoriteId) {
-        setIsFavorite(false);
-        const success = await favoriteService.removeFavorite(favoriteId);
-        if (!success) setIsFavorite(true);
-        else setFavoriteId(null);
-      } else {
-        setIsFavorite(true);
-        const success = await favoriteService.addFavorite(placeType, placeId);
-        if (!success) {
-          setIsFavorite(false);
-        } else {
-          await checkFavoriteStatus();
-        }
-      }
-    } catch (error) {
-      console.warn('Lỗi khi toggle favorite:', error);
-    } finally {
-      setIsTogglingFavorite(false);
-    }
-  };
-
   // Định dạng hiển thị giá theo loại địa điểm
   const formattedPrice = useMemo(() => {
     if (!place) return '';
@@ -201,14 +165,14 @@ export const PlaceDetailScreen: React.FC = () => {
     return 'Liên hệ';
   }, [place]);
 
-  // Tên thành phố
-  const cityName = useMemo(() => {
-    if (!place?.city) return '';
-    if (typeof place.city === 'object') {
-      return (place.city as any)?.name || '';
-    }
-    return '';
-  }, [place?.city]);
+  // Tên thành phố (placeService đã tách city populate thành city ID + cityName)
+  const cityName = place?.cityName || '';
+
+  // Chuyển sang tab Lịch trình: ScheduleTab nằm trong MainTabNavigator (navigator con),
+  // React Navigation 7 không tự navigate vào navigator con theo tên nên phải chỉ rõ navigator cha.
+  const goToScheduleTab = () => {
+    navigation.navigate(SCREEN_NAMES.MAIN_TAB, { screen: SCREEN_NAMES.SCHEDULE_TAB });
+  };
 
   // Tiện ích thứ 2 tùy theo loại địa điểm
   const secondHighlight = useMemo(() => {
@@ -270,9 +234,7 @@ export const PlaceDetailScreen: React.FC = () => {
           },
           {
             text: 'Xem lịch trình',
-            onPress: () => {
-              navigation.navigate(SCREEN_NAMES.SCHEDULE_TAB);
-            },
+            onPress: goToScheduleTab,
           },
         ]
       );
@@ -371,6 +333,14 @@ export const PlaceDetailScreen: React.FC = () => {
           { paddingBottom: insets.bottom + 90 },
         ]}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary.main]}
+            tintColor={colors.primary.main}
+          />
+        }
       >
         {/* 2. Hero Cover Image with Rounded Corners */}
         <View style={styles.heroContainer}>
@@ -538,21 +508,29 @@ export const PlaceDetailScreen: React.FC = () => {
             </View>
           ) : (
             reviews.map((rev) => {
+              const myId = userProfile?._id || currentUser?._id;
               const isMine =
-                currentUser?._id &&
+                Boolean(myId) &&
                 typeof rev.user === 'object' &&
-                rev.user?._id === currentUser._id;
+                rev.user?._id === myId;
+
+              // Lấy avatar: nếu là đánh giá của chính mình thì lấy avatar mới nhất từ API /auth/profile
+              const avatarUri = isMine
+                ? (userProfile?.avatar || rev.user?.avatar)
+                : rev.user?.avatar;
 
               return (
                 <View key={rev._id} style={styles.reviewCard}>
                   <View style={styles.reviewHeader}>
                     <Image
-                      source={{ uri: rev.user?.avatar || DEFAULT_AVATAR }}
+                      source={avatarUri ? { uri: avatarUri } : IMAGES.avatarDefault}
                       style={styles.reviewAvatar}
                     />
                     <View style={styles.reviewUserInfo}>
                       <AppText variant="bodyBold" color="main">
-                        {rev.user?.name || 'Du khách'}
+                        {isMine
+                          ? (userProfile?.name || rev.user?.name || 'Bạn')
+                          : (rev.user?.name || 'Du khách')}
                       </AppText>
                       <AppText variant="caption" color="muted">
                         {new Date(rev.createdAt).toLocaleDateString('vi-VN')}
@@ -647,7 +625,7 @@ export const PlaceDetailScreen: React.FC = () => {
                   size="sm"
                   onPress={() => {
                     setIsPlanModalVisible(false);
-                    navigation.navigate(SCREEN_NAMES.SCHEDULE_TAB);
+                    goToScheduleTab();
                   }}
                   style={{ marginTop: 16 }}
                 />
@@ -770,6 +748,26 @@ export const PlaceDetailScreen: React.FC = () => {
               >
                 <AppIcon name="close" size={18} color="#64748B" />
               </TouchableOpacity>
+            </View>
+
+            {/* Thông tin tài khoản người dùng từ /auth/profile */}
+            <View style={styles.reviewerInfoCard}>
+              <Image
+                source={
+                  userProfile?.avatar
+                    ? { uri: userProfile.avatar }
+                    : IMAGES.avatarDefault
+                }
+                style={styles.reviewerAvatar}
+              />
+              <View style={styles.reviewerTextGroup}>
+                <AppText variant="bodyBold" color="main">
+                  {userProfile?.name || 'Tài khoản của bạn'}
+                </AppText>
+                <AppText variant="caption" color="muted">
+                  {userProfile?.email || 'Đánh giá được chia sẻ công khai'}
+                </AppText>
+              </View>
             </View>
 
             <AppText variant="captionBold" color="sub" style={styles.modalSectionLabel}>
@@ -1198,6 +1196,26 @@ const styles = StyleSheet.create({
   },
 
   // Star Picker
+  reviewerInfoCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    padding: 12,
+    borderRadius: 14,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  reviewerAvatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: colors.background.subtle,
+  },
+  reviewerTextGroup: {
+    marginLeft: 12,
+    flex: 1,
+  },
   starPickerRow: {
     flexDirection: 'row',
     justifyContent: 'center',

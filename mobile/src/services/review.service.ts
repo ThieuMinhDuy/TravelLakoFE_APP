@@ -40,7 +40,11 @@ export const reviewService = {
       const data = res.data;
       return (data?.review || data) as Review;
     } catch (error: any) {
-      const message = error?.response?.data?.message || 'Không thể gửi đánh giá. Vui lòng thử lại.';
+      // Interceptor đã chuẩn hoá lỗi thành ApiError { message, statusCode } (message lấy từ backend)
+      const message =
+        error?.message ||
+        error?.response?.data?.message ||
+        'Không thể gửi đánh giá. Vui lòng thử lại.';
       throw new Error(message);
     }
   },

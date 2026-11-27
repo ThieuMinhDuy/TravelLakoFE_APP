@@ -17,7 +17,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({ onNotificationPress }) =
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user, updateUser } = useAuthStore();
   const [avatarUri, setAvatarUri] = useState<string | null>(user?.avatar || null);
-  const [userName, setUserName] = useState<string>(user?.name || 'SheftyDesign');
+  const [userName, setUserName] = useState<string>(user?.name || 'bạn');
 
   // Lấy avatar và thông tin người dùng từ API /auth/profile
   useEffect(() => {

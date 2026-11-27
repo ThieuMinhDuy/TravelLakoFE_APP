@@ -65,20 +65,67 @@ export const PriceWaveSlider: React.FC<PriceWaveSliderProps> = ({
   const minX = getXFromValue(localMin);
   const maxX = getXFromValue(localMax);
 
+  // PanResponder chỉ được tạo 1 lần (useRef) nên KHÔNG được đọc state/props trực tiếp
+  // (sẽ bị "đóng băng" giá trị lúc mount). Luôn đọc giá trị mới nhất qua ref này.
+  const latestRef = useRef({
+    min: localMin,
+    max: localMax,
+    getXFromValue,
+    getValueFromX,
+    onChange,
+    minLimit,
+    maxLimit,
+    step,
+  });
+  latestRef.current.getXFromValue = getXFromValue;
+  latestRef.current.getValueFromX = getValueFromX;
+  latestRef.current.onChange = onChange;
+  latestRef.current.minLimit = minLimit;
+  latestRef.current.maxLimit = maxLimit;
+  latestRef.current.step = step;
+
+  // Toạ độ X của thumb tại thời điểm bắt đầu kéo
+  const dragStartXRef = useRef(0);
+
+  const commitMin = (val: number) => {
+    latestRef.current.min = val;
+    setLocalMin(val);
+  };
+
+  const commitMax = (val: number) => {
+    latestRef.current.max = val;
+    setLocalMax(val);
+  };
+
+  // Đồng bộ ref khi props thay đổi từ bên ngoài (vd: "Xóa tất cả")
+  useEffect(() => {
+    latestRef.current.min = minPrice;
+    latestRef.current.max = maxPrice;
+  }, [minPrice, maxPrice]);
+
   // PanResponder cho Thumb Min
   const minPan = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        const cur = latestRef.current;
+        dragStartXRef.current = cur.getXFromValue(cur.min);
+      },
       onPanResponderMove: (_, gestureState) => {
-        const newX = gestureState.dx;
-        const targetX = getXFromValue(localMin) + newX;
-        let newVal = getValueFromX(targetX);
-        newVal = Math.max(minLimit, Math.min(newVal, localMax - step));
-        setLocalMin(newVal);
+        const cur = latestRef.current;
+        const targetX = dragStartXRef.current + gestureState.dx;
+        let newVal = cur.getValueFromX(targetX);
+        newVal = Math.max(cur.minLimit, Math.min(newVal, cur.max - cur.step));
+        commitMin(newVal);
       },
       onPanResponderRelease: () => {
-        onChange(localMin, localMax);
+        const cur = latestRef.current;
+        cur.onChange(cur.min, cur.max);
+      },
+      onPanResponderTerminate: () => {
+        const cur = latestRef.current;
+        cur.onChange(cur.min, cur.max);
       },
     })
   ).current;
@@ -88,15 +135,24 @@ export const PriceWaveSlider: React.FC<PriceWaveSliderProps> = ({
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        const cur = latestRef.current;
+        dragStartXRef.current = cur.getXFromValue(cur.max);
+      },
       onPanResponderMove: (_, gestureState) => {
-        const newX = gestureState.dx;
-        const targetX = getXFromValue(localMax) + newX;
-        let newVal = getValueFromX(targetX);
-        newVal = Math.min(maxLimit, Math.max(newVal, localMin + step));
-        setLocalMax(newVal);
+        const cur = latestRef.current;
+        const targetX = dragStartXRef.current + gestureState.dx;
+        let newVal = cur.getValueFromX(targetX);
+        newVal = Math.min(cur.maxLimit, Math.max(newVal, cur.min + cur.step));
+        commitMax(newVal);
       },
       onPanResponderRelease: () => {
-        onChange(localMin, localMax);
+        const cur = latestRef.current;
+        cur.onChange(cur.min, cur.max);
+      },
+      onPanResponderTerminate: () => {
+        const cur = latestRef.current;
+        cur.onChange(cur.min, cur.max);
       },
     })
   ).current;

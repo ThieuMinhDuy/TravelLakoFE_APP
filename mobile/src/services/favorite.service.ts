@@ -21,25 +21,28 @@ export const favoriteService = {
 
   /**
    * Thêm địa điểm vào danh sách yêu thích
+   * Backend trả về { message, favorite } -> trả về _id của bản ghi favorite (dùng để xóa), hoặc null nếu lỗi
    */
-  async addFavorite(itemType: 'Attraction' | 'Hotel' | 'Restaurant' | 'Cafe', itemId: string): Promise<boolean> {
+  async addFavorite(itemType: 'Attraction' | 'Hotel' | 'Restaurant' | 'Cafe', itemId: string): Promise<string | null> {
     try {
-      await apiClient.post<any>(API_URLS.FAVORITES.BASE, {
+      const res = await apiClient.post<any>(API_URLS.FAVORITES.BASE, {
         itemType,
         itemId,
       });
-      return true;
+      const data = res.data;
+      return data?.favorite?._id || data?.data?._id || data?._id || null;
     } catch {
-      return false;
+      return null;
     }
   },
 
   /**
-   * Xóa địa điểm khỏi danh sách yêu thích theo ID
+   * Xóa địa điểm khỏi danh sách yêu thích
+   * @param favoriteId _id của BẢN GHI favorite (không phải _id của địa điểm) - theo DELETE /api/favorites/:id
    */
   async removeFavorite(favoriteId: string): Promise<boolean> {
     try {
-      await apiClient.delete<any>(API_URLS.FAVORITES.TOGGLE(favoriteId));
+      await apiClient.delete<any>(API_URLS.FAVORITES.REMOVE(favoriteId));
       return true;
     } catch {
       return false;

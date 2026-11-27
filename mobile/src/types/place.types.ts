@@ -7,6 +7,8 @@ export interface Place {
   images: string[];
   address: string;
   city?: string;
+  /** Tên thành phố (lấy từ city đã được backend populate) */
+  cityName?: string;
   coordinates?: Coordinates;
   rating?: number;
   numReviews?: number;

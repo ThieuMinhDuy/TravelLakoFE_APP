@@ -39,7 +39,7 @@ export const API_URLS = {
   // Favorites (/api/favorites)
   FAVORITES: {
     BASE: '/favorites',
-    TOGGLE: (placeId: string) => `/favorites/${placeId}`,
+    REMOVE: (favoriteId: string) => `/favorites/${favoriteId}`,
   },
 
   // Trips (/api/trips)
